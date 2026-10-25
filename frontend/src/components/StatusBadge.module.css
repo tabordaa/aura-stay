@@ -1,0 +1,16 @@
+/* Mismos colores que los badges de estado del panel admin */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-xl);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.status-pending  { background: var(--error-bg); color: var(--error); }
+.status-progress { background: #FFF3CD; color: #856404; }
+.status-done     { background: var(--primary-light); color: var(--primary); }
+.status-rejected { background: #eef1ee; color: #6b776b; }

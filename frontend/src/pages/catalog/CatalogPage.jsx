@@ -7,6 +7,7 @@ import StayDrawer from '../../components/StayDrawer';
 import CheckoutModal from '../../components/CheckoutModal';
 import RoomDetailModal from '../../components/RoomDetailModal';
 import StaySearchBar from '../../components/StaySearchBar';
+import NextStayBanner from '../../components/NextStayBanner';
 import { activeStay, readStay } from '../../utils/stay';
 import { CATEGORIES } from '../../utils/categories';
 import { useAuth } from '../../hooks/useAuth';
@@ -37,6 +38,7 @@ export default function CatalogPage() {
   const [rooms, setRooms] = useState([]);
   const [catalogState, setCatalogState] = useState('loading'); // loading | ready | error
   const [retryKey, setRetryKey] = useState(0);
+  const [bannerKey, setBannerKey] = useState(0);
   const [notice, setNotice] = useState('');
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [checkoutItems, setCheckoutItems] = useState(null);
@@ -109,7 +111,11 @@ export default function CatalogPage() {
   };
   const closeCheckout = useCallback(() => setCheckoutItems(null), []);
   // Las reservas hechas salen de la estadía; el servicio ya volvió a validar todo
-  const handleReserved = (uids) => uids.forEach(uid => stayCart.remove(uid));
+  // y el banner de "próxima estadía" se vuelve a consultar
+  const handleReserved = (uids) => {
+    uids.forEach(uid => stayCart.remove(uid));
+    setBannerKey(k => k + 1);
+  };
 
   const toggleFav = (id) => setFavorites(f => f.includes(id) ? f.filter(x => x !== id) : [...f, id]);
   const setFilter = (key) => (e) => setFilters(f => ({ ...f, [key]: e.target.value }));
@@ -139,6 +145,7 @@ export default function CatalogPage() {
 
         <div className={styles['catalog-body']}>
           <main className={styles['catalog-main']}>
+            <NextStayBanner userId={user?.id} refreshKey={bannerKey} />
             {/* Welcome Banner */}
             <div className={styles['welcome-banner']}>
               <div className={styles['banner-left']}>

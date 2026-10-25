@@ -1,117 +1,128 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { IconMapPin, IconPhone, IconCheck } from '../../components/Icons';
-import useOrderStatus from '../../hooks/useOrderStatus';
-import { orderService } from '../../services/order.service';
-import {
-  CLOSED_STATUSES, ORDER_STEPS, DELIVERY_MINUTES, PAYMENT_LABELS, stepIndex, formatPrice, formatOrderId, parseServerDate,
-} from '../../utils/orders';
-import OrdersTopbar from './OrdersTopbar';
-import styles from './Orders.module.css';
+import { IconCheck, IconCalendar, IconPhone } from '../../components/Icons';
+import StatusBadge from '../../components/StatusBadge';
+import { reservationsService } from '../../services/reservations.service';
+import { formatPrice } from '../../utils/format';
+import { formatLongDate, formatStayDate } from '../../utils/dates';
+import { categoryLabel } from '../../utils/categories';
+import { CANCEL_TOO_LATE_MESSAGE, PAYMENT_LABELS, TIMELINE, canCancel, statusMeta, timelineIndex } from '../../utils/reservations';
+import CancelReservationModal from './CancelReservationModal';
+import ReservationsTopbar from './ReservationsTopbar';
+import styles from './Reservations.module.css';
 
-const formatTime = (date) => date.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
-
-function formatPhone(phone) {
-  const digits = (phone || '').replace(/\D/g, '');
-  return digits.length === 10 ? `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}` : phone;
-}
-
-export default function OrderTrackingPage() {
+export default function ReservationDetailPage() {
   const { id } = useParams();
-  const { order, loading, notFound, error, updatedAt, replaceOrder } = useOrderStatus(id);
+  const [state, setState] = useState({ id: null, reservation: null, notFound: false, error: '' });
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [toast, setToast] = useState('');
 
-  async function cancelOrder() {
+  useEffect(() => {
+    let active = true;
+    reservationsService.get(id)
+      .then(reservation => { if (active) setState({ id, reservation, notFound: false, error: '' }); })
+      .catch(err => {
+        if (!active) return;
+        const notFound = err.message === 'Reserva no encontrada';
+        setState({ id, reservation: null, notFound, error: notFound ? '' : 'No pudimos cargar tu reserva. Intenta de nuevo en un momento.' });
+      });
+    return () => { active = false; };
+  }, [id]);
+
+  useEffect(() => {
+    if (!toast) return undefined;
+    const timer = setTimeout(() => setToast(''), 3500);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  const closeModal = useCallback(() => { setConfirmCancel(false); setActionError(''); }, []);
+
+  async function cancelReservation() {
     setCancelling(true);
     setActionError('');
     try {
-      replaceOrder(await orderService.cancelOrder(order.id));
+      const updated = await reservationsService.cancel(id);
+      setState(s => ({ ...s, reservation: updated }));
       setConfirmCancel(false);
+      setToast('Tu reserva fue cancelada');
     } catch (err) {
-      setActionError(err instanceof TypeError ? 'Sin conexión con el servidor. Intenta de nuevo.' : err.message);
+      setActionError(err.message);
     } finally {
       setCancelling(false);
     }
   }
 
+  const { reservation, notFound, error } = state;
   let content;
-  if (loading && !order) {
-    content = <div className={styles['state-card']}><span className={styles.spinner} /> Buscando tu pedido…</div>;
+  if (state.id !== id) {
+    content = <div className={styles['state-card']} role="status"><span className={styles.spinner} /> Buscando tu reserva…</div>;
   } else if (notFound) {
     content = (
       <div className={styles['state-card']}>
         <span className={styles['state-icon']}>🔎</span>
-        <h2>No encontramos el pedido {formatOrderId(id)}</h2>
-        <p>Revisa el número o mira la lista de tus pedidos.</p>
-        <Link to="/reservas" className={styles['btn-primary']}>Ver mis pedidos</Link>
+        <h2>Reserva no encontrada</h2>
+        <p>Revisa el enlace o mira la lista de tus reservas.</p>
+        <Link to="/reservas" className={styles['btn-primary']}>Ver mis reservas</Link>
       </div>
     );
-  } else if (!order) {
-    content = <div className={styles['state-card']}><span className={styles['state-icon']}>📡</span><p>{error}</p></div>;
+  } else if (!reservation) {
+    content = <div className={styles['state-card']} role="alert"><span className={styles['state-icon']}>📡</span><p>{error}</p></div>;
   } else {
-    const closed = CLOSED_STATUSES[order.status];
-    const current = stepIndex(order.status);
-    const step = closed || ORDER_STEPS[current];
-    const delivered = order.status === 'entregado';
-    const finished = delivered || Boolean(closed);
-    const createdAt = parseServerDate(order.created_at);
-    const eta = new Date(createdAt.getTime() + DELIVERY_MINUTES * 60000);
-
-    const items = order.items.map(i => ({
-      id: i.id,
-      name: i.product_name || `Producto ${i.product_id}`,
-      image: i.product_image_url,
-      qty: i.quantity,
-      price: i.price_at_purchase,
-    }));
-    const subtotal = items.reduce((acc, i) => acc + i.price * i.qty, 0);
-    const deliveryFee = Number(order.delivery_fee) || 0;
+    const r = reservation;
+    const meta = statusMeta(r.status);
+    const closed = r.status === 'cancelada' || r.status === 'rechazada';
+    const finished = r.status === 'finalizada';
+    const current = timelineIndex(r.status);
+    const step = closed ? meta : TIMELINE[current];
+    const cancellable = canCancel(r);
 
     content = (
       <>
-        {/* Estado actual */}
-        <section className={[styles.hero, delivered ? styles.delivered : '', closed ? styles.closed : ''].join(' ')}>
+        <section className={[styles.hero, finished ? styles.delivered : '', closed ? styles.closed : ''].join(' ')}>
           <div className={styles['hero-main']}>
-            <p className={styles['hero-meta']}>
-              Pedido <strong>{formatOrderId(order.id)}</strong> • Hecho a las {formatTime(createdAt)}
-            </p>
+            <p className={styles['hero-meta']}>Reserva <strong>{r.code}</strong> • {r.room.name}</p>
             <div className={styles['hero-status']}>
               <span className={styles['hero-icon']}>{step.icon}</span>
               <div>
-                <h1>{step.label}</h1>
-                <p>{order.status === 'rechazado' && order.rejection_reason ? order.rejection_reason : step.desc}</p>
+                <h1>{meta.label}</h1>
+                <p>{closed ? (r.status === 'cancelada' ? 'Cancelaste esta reserva' : 'El hotel no pudo atender tu reserva') : step.desc}</p>
               </div>
             </div>
-            <span className={styles.live}>
-              {finished
-                ? (closed ? <>Pedido {closed.label.toLowerCase()}</> : <><IconCheck size={12} /> Pedido finalizado</>)
-                : <><span className={styles['live-dot']} /> En vivo • actualizado {updatedAt ? formatTime(updatedAt) : ''}</>}
-            </span>
-            {error && <p className={styles['hero-error']}>{error}</p>}
+            <StatusBadge status={r.status} />
           </div>
           <div className={styles.eta}>
-            <small>{delivered ? 'Entregado' : closed ? 'Estado' : 'Llegada estimada'}</small>
-            <strong>{delivered ? '✓' : closed ? step.icon : formatTime(eta)}</strong>
-            {!finished && <span>{DELIVERY_MINUTES} min desde tu compra</span>}
+            <small>Llegada</small>
+            <strong>{formatStayDate(r.check_in)}</strong>
+            <span>{r.nights} noche{r.nights !== 1 ? 's' : ''} • salida {formatStayDate(r.check_out)}</span>
           </div>
         </section>
 
-        {/* Progreso (solo para pedidos que siguen el flujo normal) */}
+        {r.status === 'rechazada' && (
+          <p className={styles.notice} role="status">
+            <strong>Motivo del hotel:</strong> {r.rejection_reason || 'El hotel no indicó un motivo.'}
+          </p>
+        )}
+        {r.status === 'cancelada' && (
+          <p className={styles.notice} role="status">
+            Cancelaste esta reserva{r.cancelled_at ? ` el ${formatLongDate(r.cancelled_at)}` : ''}.
+          </p>
+        )}
+
         {!closed && (
           <section className={styles.panel}>
-            <ol className={styles.progress} style={{ '--progress': `${(current / (ORDER_STEPS.length - 1)) * 100}%` }}>
-              {ORDER_STEPS.map((s, i) => (
+            <ol className={styles.progress} style={{ '--progress': `${(current / (TIMELINE.length - 1)) * 100}%` }}>
+              {TIMELINE.map((s, i) => (
                 <li
                   key={s.status}
                   className={[
                     styles['progress-step'],
-                    i < current || delivered ? styles.done : '',
-                    i === current && !delivered ? styles.current : '',
+                    i < current || finished ? styles.done : '',
+                    i === current && !finished ? styles.current : '',
                   ].join(' ')}
                 >
-                  <span className={styles['progress-dot']}>{i < current || delivered ? <IconCheck size={14} /> : s.icon}</span>
+                  <span className={styles['progress-dot']}>{i < current || finished ? <IconCheck size={14} /> : s.icon}</span>
                   <strong>{s.label}</strong>
                   <small>{s.desc}</small>
                 </li>
@@ -121,85 +132,97 @@ export default function OrderTrackingPage() {
         )}
 
         <div className={styles.grid}>
-          {/* Productos */}
           <section className={styles.panel}>
-            <h3>Tu pedido</h3>
+            <h3>Tu habitación</h3>
             <div className={styles.items}>
-              {items.map(item => (
-                <div key={item.id} className={styles.item}>
-                  <span className={styles['item-emoji']}>{item.image ? <img src={item.image} alt="" /> : '🛒'}</span>
-                  <span className={styles['item-name']}>{item.name} <em>x{item.qty}</em></span>
-                  <span className={styles['item-price']}>{formatPrice(item.price * item.qty)}</span>
-                </div>
-              ))}
+              <div className={styles.item}>
+                <span className={[styles['item-emoji'], styles['item-photo']].join(' ')}>
+                  {r.room.image ? <img src={r.room.image} alt="" /> : '🛏️'}
+                </span>
+                <span className={styles['item-name']}>
+                  {r.room.name}
+                  <em> {categoryLabel(r.room.category)}{r.room.beds ? ` • ${r.room.beds}` : ''}</em>
+                </span>
+              </div>
             </div>
-            {deliveryFee > 0 && (
-              <>
-                <div className={styles.row}><span>Subtotal</span><span>{formatPrice(subtotal)}</span></div>
-                <div className={styles.row}><span>Servicio</span><span>{formatPrice(deliveryFee)}</span></div>
-              </>
+            <div className={styles.row}><span>{r.nights} noche{r.nights !== 1 ? 's' : ''}</span><span>{formatPrice(r.subtotal)}</span></div>
+            {r.extra_lines.map(x => (
+              <div key={x.extra_id} className={styles.row}><span>{x.name} <em>× {x.qty}</em></span></div>
+            ))}
+            {r.extras_total > 0 && (
+              <div className={styles.row}><span>Servicios adicionales</span><span>{formatPrice(r.extras_total)}</span></div>
             )}
-            <div className={[styles.row, styles['row-total']].join(' ')}><span>Total</span><span>{formatPrice(order.total_price)}</span></div>
+            <div className={styles.row}><span>Impuestos</span><span>{formatPrice(r.taxes)}</span></div>
+            <div className={[styles.row, styles['row-total']].join(' ')}><span>Total</span><span>{formatPrice(r.total)}</span></div>
           </section>
 
-          {/* Entrega */}
           <section className={styles.panel}>
-            <h3>Entrega</h3>
+            <h3>Tu estadía</h3>
             <div className={styles.detail}>
-              <span className={styles['detail-icon']}><IconMapPin size={16} /></span>
-              <div><small>Dirección</small><p>{order.address}</p></div>
+              <span className={styles['detail-icon']}><IconCalendar size={16} /></span>
+              <div>
+                <small>Fechas</small>
+                <p>{formatStayDate(r.check_in)} → {formatStayDate(r.check_out)}</p>
+                <p className={styles.muted}>Check-in desde las 15:00 • Check-out hasta las 12:00</p>
+              </div>
             </div>
-            {order.phone && (
+            <div className={styles.detail}>
+              <span className={styles['detail-icon']}>👤</span>
+              <div><small>Huéspedes</small><p>{r.guests} huésped{r.guests !== 1 ? 'es' : ''} • {r.guest_name}</p></div>
+            </div>
+            {r.guest_phone && (
               <div className={styles.detail}>
                 <span className={styles['detail-icon']}><IconPhone size={15} /></span>
-                <div><small>Contacto</small><p>{formatPhone(order.phone)}</p></div>
+                <div><small>Contacto</small><p>{r.guest_phone}</p></div>
               </div>
             )}
-            {order.payment_method && (
-              <div className={styles.detail}>
-                <span className={styles['detail-icon']}>💳</span>
-                <div><small>Pago</small><p>{PAYMENT_LABELS[order.payment_method] || order.payment_method}</p></div>
+            <div className={styles.detail}>
+              <span className={styles['detail-icon']}>💳</span>
+              <div>
+                <small>Pago</small>
+                <p>{PAYMENT_LABELS[r.payment_method] ?? r.payment_method}{r.card_last4 ? ` •••• ${r.card_last4}` : ''}</p>
               </div>
-            )}
-            {order.notes && (
+            </div>
+            {r.special_requests && (
               <div className={styles.detail}>
                 <span className={styles['detail-icon']}>📝</span>
-                <div><small>Indicaciones</small><p>{order.notes}</p></div>
+                <div><small>Solicitudes especiales</small><p>{r.special_requests}</p></div>
               </div>
             )}
           </section>
         </div>
 
-        {order.status === 'pendiente' && confirmCancel ? (
-          <div className={styles.confirm}>
-            <span>¿Seguro que quieres cancelar el pedido? Los productos vuelven a la tienda.</span>
-            <button type="button" className={styles['btn-danger']} onClick={cancelOrder} disabled={cancelling}>
-              {cancelling ? 'Cancelando…' : 'Sí, cancelar'}
+        <div className={styles.actions}>
+          <Link to="/habitaciones" className={styles['btn-primary']}>Buscar habitaciones</Link>
+          <Link to="/reservas" className={styles['btn-secondary']}>Ver todas mis reservas</Link>
+          {cancellable && (
+            <button type="button" className={styles['btn-cancel']} onClick={() => setConfirmCancel(true)}>
+              Cancelar reserva
             </button>
-            <button type="button" className={styles['btn-secondary']} onClick={() => setConfirmCancel(false)} disabled={cancelling}>
-              No
-            </button>
-          </div>
-        ) : (
-          <div className={styles.actions}>
-            <Link to="/habitaciones" className={styles['btn-primary']}>Seguir comprando</Link>
-            <Link to="/reservas" className={styles['btn-secondary']}>Ver todos mis pedidos</Link>
-            {order.status === 'pendiente' && (
-              <button type="button" className={styles['btn-cancel']} onClick={() => setConfirmCancel(true)}>
-                Cancelar pedido
-              </button>
-            )}
-          </div>
+          )}
+        </div>
+        {(r.status === 'pendiente' || r.status === 'confirmada') && !cancellable && (
+          <p className={styles.hint}>{CANCEL_TOO_LATE_MESSAGE}</p>
         )}
-        {actionError && <p className={styles['action-error']} role="alert">{actionError}</p>}
+
+        {confirmCancel && (
+          <CancelReservationModal
+            reservation={r}
+            busy={cancelling}
+            error={actionError}
+            onConfirm={cancelReservation}
+            onClose={closeModal}
+          />
+        )}
       </>
     );
   }
 
   return (
     <div className={styles.page}>
-      <OrdersTopbar />
+      <ReservationsTopbar />
       <main className={styles.container}>{content}</main>
+      {toast && <div className={styles.toast} role="status">{toast}</div>}
     </div>
   );
 }

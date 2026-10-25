@@ -4,8 +4,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage    from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import CatalogPage  from './pages/catalog/CatalogPage';
-import MyOrdersPage from './pages/orders/MyOrdersPage';
-import OrderTrackingPage from './pages/orders/OrderTrackingPage';
+import MyReservationsPage from './pages/reservations/MyReservationsPage';
+import ReservationDetailPage from './pages/reservations/ReservationDetailPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminClients from './pages/admin/AdminClients';
 import ProfilePage from './pages/profile/ProfilePage';
@@ -29,8 +29,8 @@ export default function App() {
           <Route path="/register" element={<RegisterPage />} />
           
           <Route path="/habitaciones"  element={<ProtectedRoute allowedRoles={['huesped']}><CatalogPage /></ProtectedRoute>} />
-          <Route path="/reservas"  element={<ProtectedRoute allowedRoles={['huesped']}><MyOrdersPage /></ProtectedRoute>} />
-          <Route path="/reservas/:id" element={<ProtectedRoute allowedRoles={['huesped']}><OrderTrackingPage /></ProtectedRoute>} />
+          <Route path="/reservas"  element={<ProtectedRoute allowedRoles={['huesped']}><MyReservationsPage /></ProtectedRoute>} />
+          <Route path="/reservas/:id" element={<ProtectedRoute allowedRoles={['huesped']}><ReservationDetailPage /></ProtectedRoute>} />
           <Route path="/perfil"   element={<ProtectedRoute allowedRoles={['huesped']}><ProfilePage /></ProtectedRoute>} />
 
           <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />

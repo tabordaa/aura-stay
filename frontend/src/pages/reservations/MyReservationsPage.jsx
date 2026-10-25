@@ -1,81 +1,94 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { CLOSED_STATUSES, formatOrderId, formatPrice, getStatusInfo, parseServerDate } from '../../utils/orders';
-import { orderService } from '../../services/order.service';
-import OrdersTopbar from './OrdersTopbar';
-import styles from './Orders.module.css';
+import StatusBadge from '../../components/StatusBadge';
+import { reservationsService } from '../../services/reservations.service';
+import { formatPrice } from '../../utils/format';
+import { formatStayRange } from '../../utils/dates';
+import { TABS, filterByTab } from '../../utils/reservations';
+import ReservationsTopbar from './ReservationsTopbar';
+import styles from './Reservations.module.css';
 
-function statusClass(status) {
-  if (status === 'entregado') return styles['status-done'];
-  if (CLOSED_STATUSES[status]) return styles['status-closed'];
-  return '';
-}
+const EMPTY = {
+  proximas: { icon: '🛏️', title: 'Aún no tienes reservas', text: 'Cuando reserves tu primera estadía la verás aquí.' },
+  pasadas: { icon: '🧳', title: 'Todavía no tienes estadías pasadas', text: 'Tus estadías finalizadas aparecerán aquí.' },
+  canceladas: { icon: '🗓️', title: 'No tienes reservas canceladas', text: 'Las reservas canceladas o rechazadas aparecerán aquí.' },
+};
 
-export default function MyOrdersPage() {
-  const [orders, setOrders] = useState(null);
+export default function MyReservationsPage() {
+  const [reservations, setReservations] = useState(null);
   const [error, setError] = useState('');
+  const [tab, setTab] = useState('proximas');
 
   useEffect(() => {
     let cancelled = false;
-    orderService.getMyOrders()
-      .then(list => { if (!cancelled) setOrders(list); })
-      .catch(() => { if (!cancelled) setError('No pudimos cargar tus pedidos. Intenta de nuevo en un momento.'); });
+    reservationsService.listMine()
+      .then(list => { if (!cancelled) setReservations(list); })
+      .catch(() => { if (!cancelled) setError('No pudimos cargar tus reservas. Intenta de nuevo en un momento.'); });
     return () => { cancelled = true; };
   }, []);
 
+  const visible = reservations ? filterByTab(reservations, tab) : [];
+
   let content;
   if (error) {
-    content = <div className={styles['state-card']}><span className={styles['state-icon']}>📡</span><p>{error}</p></div>;
-  } else if (!orders) {
-    content = <div className={styles['state-card']}><span className={styles.spinner} /> Cargando tus pedidos…</div>;
-  } else if (orders.length === 0) {
+    content = <div className={styles['state-card']} role="alert"><span className={styles['state-icon']}>📡</span><p>{error}</p></div>;
+  } else if (!reservations) {
+    content = <div className={styles['state-card']} role="status"><span className={styles.spinner} /> Cargando tus reservas…</div>;
+  } else if (visible.length === 0) {
+    const empty = EMPTY[tab];
     content = (
       <div className={styles['state-card']}>
-        <span className={styles['state-icon']}>🛒</span>
-        <h2>Aún no tienes pedidos</h2>
-        <p>Cuando hagas tu primera compra la verás aquí.</p>
-        <Link to="/habitaciones" className={styles['btn-primary']}>Ir a la tienda</Link>
+        <span className={styles['state-icon']}>{empty.icon}</span>
+        <h2>{empty.title}</h2>
+        <p>{empty.text}</p>
+        <Link to="/habitaciones" className={styles['btn-primary']}>Buscar habitaciones</Link>
       </div>
     );
   } else {
     content = (
       <div className={styles.list}>
-        {orders.map(o => {
-          const step = getStatusInfo(o.status);
-          const count = o.items.reduce((acc, i) => acc + i.quantity, 0);
-          return (
-            <Link key={o.id} to={`/reservas/${o.id}`} className={styles['order-row']}>
-              <span className={styles['order-thumbs']}>
-                {o.items.slice(0, 3).map(i => (i.product_image_url
-                  ? <img key={i.id} src={i.product_image_url} alt="" />
-                  : <span key={i.id}>🛒</span>))}
-              </span>
-              <div className={styles['order-info']}>
-                <strong>Pedido {formatOrderId(o.id)}</strong>
-                <small>
-                  {parseServerDate(o.created_at).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })}
-                  {' • '}{count} producto{count !== 1 ? 's' : ''}
-                </small>
-              </div>
-              <span className={[styles.status, statusClass(o.status)].join(' ')}>
-                {step.icon} {step.label}
-              </span>
-              <span className={styles['order-total']}>{formatPrice(o.total_price)}</span>
-              <span className={styles['order-arrow']}>→</span>
-            </Link>
-          );
-        })}
+        {visible.map(r => (
+          <Link key={r.id} to={`/reservas/${r.id}`} className={styles['order-row']}>
+            <span className={styles['order-thumbs']}>
+              {r.room.image ? <img src={r.room.image} alt="" /> : <span>🛏️</span>}
+            </span>
+            <div className={styles['order-info']}>
+              <strong>{r.room.name}</strong>
+              <small>
+                {formatStayRange(r.check_in, r.check_out)}
+                {' • '}{r.nights} noche{r.nights !== 1 ? 's' : ''}
+                {' • '}{r.code}
+              </small>
+            </div>
+            <StatusBadge status={r.status} />
+            <span className={styles['order-total']}>{formatPrice(r.total)}</span>
+            <span className={styles['order-arrow']}>→</span>
+          </Link>
+        ))}
       </div>
     );
   }
 
   return (
     <div className={styles.page}>
-      <OrdersTopbar />
+      <ReservationsTopbar />
       <main className={styles.container}>
         <div className={styles['list-head']}>
-          <h1>Mis pedidos</h1>
-          <p>Sigue el estado de tus compras en tiempo real</p>
+          <h1>Mis reservas</h1>
+          <p>Consulta y administra tus estadías</p>
+        </div>
+        <div className={styles.tabs} role="group" aria-label="Filtrar reservas">
+          {TABS.map(t => (
+            <button
+              key={t.id}
+              type="button"
+              aria-pressed={tab === t.id}
+              className={[styles['tab-btn'], tab === t.id ? styles.active : ''].join(' ')}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}{reservations ? ` (${filterByTab(reservations, t.id).length})` : ''}
+            </button>
+          ))}
         </div>
         {content}
       </main>

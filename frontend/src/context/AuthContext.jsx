@@ -2,11 +2,10 @@ import { useState, useEffect } from 'react';
 import { authService } from '../services/auth.service';
 import { AUTH_EXPIRED_EVENT } from '../services/api';
 import { AuthContext } from './authContextObject';
-import { clearLegacyOrderStorage } from '../utils/orders';
 import { stayStorageKey } from '../hooks/useStay';
 import { useNavigate } from 'react-router';
 import styles from './AuthContext.module.css';
-import ordersStyles from '../pages/orders/Orders.module.css';
+import reservationsStyles from '../pages/reservations/Reservations.module.css';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -39,7 +38,6 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const userData = await authService.login(email, password);
-    clearLegacyOrderStorage();
     setUser(userData);
     goHome(userData);
   };
@@ -60,7 +58,6 @@ export function AuthProvider({ children }) {
   const logout = () => {
     // En un computador compartido, el siguiente usuario no debe ver la estadía del anterior
     if (user) localStorage.removeItem(stayStorageKey(user.id));
-    clearLegacyOrderStorage();
     authService.logout();
     setUser(null);
     navigate('/login');
@@ -69,7 +66,7 @@ export function AuthProvider({ children }) {
   if (loading) {
     return (
       <div className={styles.loading} role="status" aria-label="Cargando">
-        <div className={ordersStyles.spinner} />
+        <div className={reservationsStyles.spinner} />
       </div>
     );
   }
