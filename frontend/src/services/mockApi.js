@@ -7,8 +7,8 @@ import { buildReservations } from '../mocks/reservations';
 import { buildRooms } from '../mocks/rooms';
 import { todayISO } from '../utils/dates';
 
-// v3: la semilla incluye reservas · v4: totales de paquetes corregidos · v5: llegadas de hoy en la semilla · v6: habitaciones físicas
-const DB_KEY = 'aura_stay_db_v7';
+// v3: la semilla incluye reservas · v4: totales de paquetes corregidos · v5: llegadas de hoy en la semilla · v6: habitaciones físicas · v8: created_at en usuarios
+const DB_KEY = 'aura_stay_db_v8';
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sin 0/O/1/I para no confundir
 
 // Simula la latencia de red
@@ -57,7 +57,16 @@ export function saveDb(db) {
 }
 
 // Restaura los datos de la demo
+// Además de la BD limpia las estadías en curso (`aura_stay_cart_*`), que apuntan a reservas/tipos de la BD anterior.
+// La sesión no se toca: los usuarios semilla conservan sus ids.
 export function resetDemoData() {
+  try {
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith('aura_stay_cart_'))
+      .forEach((k) => localStorage.removeItem(k));
+  } catch {
+    // Almacenamiento bloqueado: no hay nada que limpiar
+  }
   const db = seed();
   saveDb(db);
   return db;

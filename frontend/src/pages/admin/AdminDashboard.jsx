@@ -3,6 +3,7 @@ import { IconCheck } from '../../components/Icons';
 import StatusBadge from '../../components/StatusBadge';
 import AdminLayout from './AdminLayout';
 import RejectReservationModal from './RejectReservationModal';
+import ResetDemoModal from './ResetDemoModal';
 import { formatPrice, initials } from '../../utils/format';
 import { formatStayDate } from '../../utils/dates';
 import { canTransition } from '../../utils/reservations';
@@ -36,6 +37,9 @@ export default function AdminDashboard() {
   const [rejecting, setRejecting] = useState(null);
   const [rejectError, setRejectError] = useState('');
   const [toast, setToast] = useState(null);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
+  const [resetError, setResetError] = useState('');
 
   // Recarga KPIs y tabla juntos; los setState ocurren al llegar la respuesta
   // Devuelve true/false; con `silent` no muestra toast (lo decide quien llama)
@@ -92,6 +96,25 @@ export default function AdminDashboard() {
     }
   }
 
+  async function resetDemo() {
+    setResetBusy(true);
+    setResetError('');
+    try {
+      await adminService.resetDemo();
+    } catch (err) {
+      setResetError(err.message || 'No pudimos restaurar los datos');
+      setResetBusy(false);
+      return;
+    }
+    setResetOpen(false);
+    setResetBusy(false);
+    setLoading(true);
+    const refreshed = await load(true);
+    setToast(refreshed
+      ? { type: 'success', text: 'Datos demo restaurados' }
+      : { type: 'warning', text: 'Datos restaurados, pero no pudimos actualizar el panel' });
+  }
+
   const counts = useMemo(() => Object.fromEntries(
     TABS.map((t) => [t.id, reservations.filter((r) => t.statuses.includes(r.status)).length]),
   ), [reservations]);
@@ -126,6 +149,9 @@ export default function AdminDashboard() {
           <div className={styles['refresh-group']}>
             <button type="button" className={styles['btn-refresh']} onClick={() => { setLoading(true); load(); }} disabled={loading}>
               <span className={loading ? styles.spinning : ''}>⟳</span> Actualizar
+            </button>
+            <button type="button" className={styles['btn-ghost']} onClick={() => { setResetError(''); setResetOpen(true); }} disabled={loading}>
+              Restaurar datos demo
             </button>
           </div>
         </div>
@@ -270,6 +296,15 @@ export default function AdminDashboard() {
           error={rejectError}
           onConfirm={(reason) => run(rejecting, 'reject', reason)}
           onClose={() => { setRejecting(null); setRejectError(''); }}
+        />
+      )}
+
+      {resetOpen && (
+        <ResetDemoModal
+          busy={resetBusy}
+          error={resetError}
+          onConfirm={resetDemo}
+          onClose={() => setResetOpen(false)}
         />
       )}
 
