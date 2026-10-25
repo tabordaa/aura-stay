@@ -1,4 +1,9 @@
 import { delay, loadDb } from './mockApi';
+import { addDays } from '../utils/dates';
+import { validateStay } from '../utils/stay';
+
+// Reservas que ocupan una unidad del tipo
+const ACTIVE_STATUSES = ['pendiente', 'confirmada', 'en_curso'];
 
 // Precio mostrado: por noche en habitaciones, total de la estadía en paquetes
 export const displayPrice = (r) => (r.category === 'paquete' ? r.price : r.price_per_night);
@@ -39,5 +44,29 @@ export const roomsService = {
     const room = loadDb().roomTypes.find((r) => r.id === id && r.is_active);
     if (!room) throw new Error('Habitación no encontrada');
     return room;
+  },
+
+  // Disponibilidad por tipo para [checkIn, checkOut): { [id]: { available, remaining, reason } }
+  // reason: null | 'capacity' (más huéspedes que la capacidad) | 'sold_out' (sin unidades libres)
+  async availability({ checkIn, checkOut, guests = 1 } = {}) {
+    await delay();
+    if (!checkIn || !checkOut) throw new Error('Elige las fechas de llegada y salida');
+    const [firstError] = Object.values(validateStay({ checkIn, checkOut, guests }));
+    if (firstError) throw new Error(firstError);
+
+    const people = Number(guests) || 1;
+    const { roomTypes, reservations } = loadDb();
+    const active = reservations.filter((res) => ACTIVE_STATUSES.includes(res.status));
+    const result = {};
+    for (const r of roomTypes) {
+      // Un paquete dura sus propias noches desde la llegada, sin importar la salida elegida
+      const end = r.category === 'paquete' ? addDays(checkIn, r.nights) : checkOut;
+      const taken = active.filter((res) => res.room_type_id === r.id
+        && res.check_in < end && checkIn < res.check_out).length;
+      const remaining = Math.max(0, r.units - taken);
+      const reason = people > r.capacity ? 'capacity' : remaining === 0 ? 'sold_out' : null;
+      result[r.id] = { available: reason === null, remaining, reason };
+    }
+    return result;
   },
 };
