@@ -364,7 +364,6 @@
 
 .muted { font-size: 0.76rem; color: var(--text-muted); }
 
-.client { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
 .client-avatar {
   width: 36px; height: 36px;
   border-radius: 50%;
@@ -375,9 +374,6 @@
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-
-.address { display: flex; align-items: flex-start; gap: 6px; max-width: 220px; }
-.address svg { flex-shrink: 0; margin-top: 2px; color: var(--primary); }
 
 .products {
   max-width: 200px;
@@ -587,8 +583,36 @@ form.confirm { flex-wrap: wrap; }
   .form-grid { grid-template-columns: 1fr; }
 }
 
-/* ---------- Clients ---------- */
-.client strong { display: block; color: var(--text-primary); font-size: 0.9rem; }
+/* ---------- Huéspedes ---------- */
+.client-btn {
+  white-space: nowrap;
+  display: flex; align-items: center; gap: 10px;
+  background: none; border: none; padding: 0;
+  text-align: left; cursor: pointer; font: inherit; color: inherit;
+}
+.client-btn:hover strong { color: var(--primary); }
+.client-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: var(--radius-sm); }
+.modal-wide { width: 820px; }
+.guest-info { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 20px; }
+.guest-info dt { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); }
+.guest-info dd { font-size: 0.9rem; color: var(--text-primary); overflow-wrap: anywhere; }
+.guest-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.guest-stat {
+  background: var(--primary-light);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.guest-stat span { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); }
+.guest-stat strong { font-size: 1.05rem; font-weight: 800; color: var(--text-primary); }
+.guest-section-title { font-size: 0.95rem; font-weight: 800; color: var(--text-primary); }
+@media (max-width: 640px) {
+  .guest-info { grid-template-columns: 1fr; }
+  .guest-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+.client-btn strong { color: var(--text-primary); font-size: 0.9rem; }
+.block { display: block; }
 .kpi-name {
   font-size: 1.35rem;
   line-height: 1.2;
@@ -605,14 +629,9 @@ form.confirm { flex-wrap: wrap; }
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
-.client .address {
-  white-space: normal;
-  max-width: 240px;
-  margin-top: 2px;
-}
 
 @media (max-width: 1440px) {
-  /* Celdas un poco más compactas para que la tabla de pedidos quepa completa en un portátil */
+  /* Celdas un poco más compactas para que la tabla de reservas y huéspedes quepa completa en un portátil */
   .table th, .table td { padding-left: 10px; padding-right: 10px; }
 }
 

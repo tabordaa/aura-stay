@@ -7,7 +7,7 @@ import CatalogPage  from './pages/catalog/CatalogPage';
 import MyReservationsPage from './pages/reservations/MyReservationsPage';
 import ReservationDetailPage from './pages/reservations/ReservationDetailPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminClients from './pages/admin/AdminClients';
+import AdminGuests from './pages/admin/AdminGuests';
 import ProfilePage from './pages/profile/ProfilePage';
 import AdminRooms from './pages/admin/AdminRooms';
 import { useAuth } from './hooks/useAuth';
@@ -35,7 +35,7 @@ export default function App() {
 
           <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/habitaciones" element={<ProtectedRoute allowedRoles={['admin']}><AdminRooms /></ProtectedRoute>} />
-          <Route path="/admin/huespedes" element={<ProtectedRoute allowedRoles={['admin']}><AdminClients /></ProtectedRoute>} />
+          <Route path="/admin/huespedes" element={<ProtectedRoute allowedRoles={['admin']}><AdminGuests /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
