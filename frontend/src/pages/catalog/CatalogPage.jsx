@@ -1,11 +1,13 @@
 import { useCallback, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { IconBed, IconBolt, IconCheck } from '../../components/Icons';
 import Navbar from '../../components/Navbar';
 import RoomCard from '../../components/RoomCard';
 import CartDrawer from '../../components/CartDrawer';
 import CheckoutModal from '../../components/CheckoutModal';
 import ActiveOrderBanner from '../../components/ActiveOrderBanner';
+import StaySearchBar from '../../components/StaySearchBar';
+import { activeStay, readStay } from '../../utils/stay';
 import { isActiveOrder } from '../../utils/orders';
 import { CATEGORIES } from '../../utils/categories';
 import { useAuth } from '../../hooks/useAuth';
@@ -40,6 +42,14 @@ export default function CatalogPage() {
   const [catalogState, setCatalogState] = useState('loading'); // loading | ready | error
   const [retryKey, setRetryKey] = useState(0);
   const [notice, setNotice] = useState('');
+  const [availability, setAvailability] = useState({ key: '', map: null });
+
+  // La estadía vive en la URL (?in=&out=&guests=); si es inválida no se aplica la disponibilidad
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawStay = readStay(searchParams);
+  const stay = activeStay(rawStay);
+  const stayKey = stay ? `${stay.checkIn}|${stay.checkOut}|${stay.guests}` : '';
+  const availabilityMap = stayKey && availability.key === stayKey ? availability.map : null;
 
   // "Mi estadía" se rehace en S06; mientras tanto el carrito heredado queda vacío
   const { cart, changeQty, removeFromCart, clearCart } = useCart(user?.id, []);
@@ -60,6 +70,20 @@ export default function CatalogPage() {
       .catch(() => { if (active) setCatalogState('error'); });
     return () => { active = false; };
   }, [activeCategory, searching, query, minPrice, maxPrice, guests, sort, retryKey]);
+
+  useEffect(() => {
+    if (!stayKey) return undefined;
+    let active = true;
+    const [checkIn, checkOut, stayGuests] = stayKey.split('|');
+    roomsService.availability({ checkIn, checkOut, guests: stayGuests })
+      .then(map => { if (active) setAvailability({ key: stayKey, map }); })
+      .catch(() => {
+        if (!active) return;
+        setAvailability({ key: stayKey, map: null });
+        setNotice('No pudimos verificar la disponibilidad. Intenta de nuevo.');
+      });
+    return () => { active = false; };
+  }, [stayKey, retryKey]);
 
   useEffect(() => {
     if (!notice) return undefined;
@@ -95,6 +119,9 @@ export default function CatalogPage() {
     ? `Resultados para "${query.trim()}"`
     : CATEGORIES.find(c => c.id === activeCategory)?.label ?? '';
   const count = rooms.length;
+  const unavailableCount = availabilityMap ? rooms.filter(r => availabilityMap[r.id]?.available === false).length : 0;
+  const applyStay = ({ checkIn, checkOut, guests }) => setSearchParams({ in: checkIn, out: checkOut, guests: String(guests) });
+  const clearStay = () => setSearchParams({});
   const priceRangeInvalid = minPrice !== '' && maxPrice !== '' && Number(minPrice) > Number(maxPrice);
 
   return (
@@ -127,6 +154,14 @@ export default function CatalogPage() {
               <div className={styles['banner-right']}>🏨🛏️<br />🌴🛎️</div>
             </div>
 
+            <StaySearchBar
+              key={searchParams.toString()}
+              initial={rawStay}
+              onSearch={applyStay}
+              onClear={clearStay}
+            />
+            {notice && <p className={styles['cart-notice']} role="status">{notice}</p>}
+
             {/* Section header */}
             <div className={styles['section-header']}>
               <div>
@@ -136,7 +171,9 @@ export default function CatalogPage() {
                 </div>
                 <h2>{sectionTitle}</h2>
                 <p className={styles['section-sub']}>
-                  {catalogState === 'ready' ? `${count} opci${count !== 1 ? 'ones' : 'ón'} disponible${count !== 1 ? 's' : ''}` : ' '}
+                  {catalogState === 'ready'
+                    ? `${count} opci${count !== 1 ? 'ones' : 'ón'}${unavailableCount ? ` · ${unavailableCount} sin disponibilidad` : ''}`
+                    : ' '}
                 </p>
               </div>
               <div className={styles['filter-tabs']}>
@@ -180,7 +217,7 @@ export default function CatalogPage() {
               {priceRangeInvalid && (
                 <p className={styles['filter-error']} role="alert">El precio mínimo no puede ser mayor que el máximo</p>
               )}
-              {hasFilters && !(catalogState === 'ready' && count === 0) && (
+              {hasFilters && !(catalogState === 'ready' && rooms.length === 0) && (
                 <button type="button" className={styles['btn-secondary']} onClick={clearFilters}>Limpiar filtros</button>
               )}
             </div>
@@ -196,7 +233,7 @@ export default function CatalogPage() {
                 <p>No pudimos cargar las habitaciones. Revisa tu conexión e intenta de nuevo.</p>
                 <button type="button" className={styles['btn-secondary']} onClick={retryCatalog}>Reintentar</button>
               </div>
-            ) : count === 0 ? (
+            ) : rooms.length === 0 ? (
               <div className={styles['catalog-state']}>
                 <span className={styles['state-icon']}>🔎</span>
                 <p>No encontramos habitaciones con esos filtros</p>
@@ -205,7 +242,14 @@ export default function CatalogPage() {
             ) : (
               <div className={styles['product-grid']}>
                 {rooms.map(room => (
-                  <RoomCard key={room.id} room={room} favorites={favorites} toggleFav={toggleFav} />
+                  <RoomCard
+                    key={room.id}
+                    room={room}
+                    favorites={favorites}
+                    toggleFav={toggleFav}
+                    stay={availabilityMap ? stay : null}
+                    availability={availabilityMap?.[room.id]}
+                  />
                 ))}
               </div>
             )}

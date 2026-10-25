@@ -353,11 +353,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
 }
 
 .card-price-group { display: flex; flex-direction: column; }
 .card-price-label { font-size: 0.7rem; color: var(--text-muted); }
 .card-price {
+  white-space: nowrap;
   font-size: 1.05rem;
   font-weight: 800;
   color: var(--primary);
@@ -369,6 +371,7 @@
 }
 
 .btn-add {
+  white-space: nowrap;
   background: var(--primary);
   color: #fff;
   font-size: 0.85rem;
@@ -771,6 +774,30 @@
 }
 .card-stock.stock-out { color: #b3261e; }
 .product-card.sold-out .card-image-area { opacity: 0.55; }
+/* Sin disponibilidad para las fechas buscadas: atenuada pero visible */
+.product-card.unavailable .product-img { opacity: 0.5; }
+.product-card.unavailable .chip { opacity: 0.65; }
+.product-card.unavailable .card-unit { color: var(--text-secondary); }
+.card-unavailable {
+  position: absolute;
+  top: 10px; left: 10px;
+  z-index: 1;
+  background: var(--error-bg);
+  color: var(--error);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--error-border);
+}
+.card-stay-total {
+  width: 100%;
+  white-space: nowrap;
+  margin-top: 2px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--primary);
+}
 .qty-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .qty-btn:disabled:hover { background: none; }
 
@@ -858,7 +885,7 @@
   flex-basis: 100%;
   font-size: 0.78rem;
   font-weight: 600;
-  color: #b3261e;
+  color: var(--error);
 }
 
 /* Foco visible para teclado */

@@ -2,22 +2,28 @@ import { useState } from 'react';
 import { IconHeart, IconArrowRight } from './Icons';
 import { formatPrice } from '../utils/format';
 import { amenityLabel } from '../utils/categories';
+import { stayQuote } from '../utils/pricing';
 import styles from '../pages/catalog/Catalog.module.css';
 
 // Chips visibles por tarjeta (el resto se ve en el detalle, S05)
 const MAX_AMENITIES = 4;
 
-export default function RoomCard({ room, favorites, toggleFav, onSelect }) {
+export default function RoomCard({ room, favorites, toggleFav, onSelect, stay, availability }) {
   const [imgError, setImgError] = useState(false);
   const isFav = favorites.includes(room.id);
   const isPackage = room.category === 'paquete';
   const price = isPackage ? room.price : room.price_per_night;
   const cover = room.images?.[0];
+  // Con fechas se muestra el total de la estadía; sin ellas, la tarjeta es la de siempre
+  const quote = stay ? stayQuote({ roomType: room, checkIn: stay.checkIn, checkOut: stay.checkOut, guests: stay.guests }) : null;
+  const unavailable = Boolean(stay && availability && !availability.available);
+  const nightsLabel = quote ? `${isPackage ? 'Paquete de ' : ''}${quote.nights} noche${quote.nights !== 1 ? 's' : ''}` : '';
 
   return (
-    <div className={styles['product-card']}>
+    <div className={[styles['product-card'], unavailable ? styles.unavailable : ''].join(' ')}>
       <div className={styles['card-image-area']}>
-        {room.tag && (
+        {unavailable && <span className={styles['card-unavailable']}>Sin disponibilidad</span>}
+        {room.tag && !unavailable && (
           <span className={[styles['card-tag'], room.old_price ? styles['tag-deal'] : ''].join(' ')}>
             {room.tag}
           </span>
@@ -50,6 +56,9 @@ export default function RoomCard({ room, favorites, toggleFav, onSelect }) {
         </p>
         <p className={styles['card-name']}>{room.name}</p>
         <p className={styles['card-unit']}>{room.beds}</p>
+        {unavailable && availability.reason === 'capacity' && (
+          <p className={styles['card-stock'] + ' ' + styles['stock-out']}>Capacidad máxima: {room.capacity} huéspedes</p>
+        )}
         <div className={styles['card-chips']}>
           {room.amenities.slice(0, MAX_AMENITIES).map(key => (
             <span key={key} className={styles['chip']}>{amenityLabel(key)}</span>
@@ -71,6 +80,11 @@ export default function RoomCard({ room, favorites, toggleFav, onSelect }) {
         >
           Ver detalles <IconArrowRight size={13} />
         </button>
+        {quote && (
+          <span className={styles['card-stay-total']} title="Total con impuestos">
+            {nightsLabel} · {formatPrice(quote.total)}
+          </span>
+        )}
       </div>
     </div>
   );
