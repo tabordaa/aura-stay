@@ -60,7 +60,7 @@ export function AuthProvider({ children }) {
     if (user) localStorage.removeItem(stayStorageKey(user.id));
     authService.logout();
     setUser(null);
-    navigate('/login');
+    navigate('/', { replace: true });
   };
 
   if (loading) {

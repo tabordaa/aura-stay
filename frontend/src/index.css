@@ -38,6 +38,10 @@
   --error-strong: #d93025;
   --error-bg: #fde8e7;
   --error-border: #f2b8b5;
+  --warning-bg: #FFF3CD;
+  --warning: #856404;
+  --neutral-bg: #eef1ee;
+  --neutral: #6b776b;
 }
 
 /* =========================================

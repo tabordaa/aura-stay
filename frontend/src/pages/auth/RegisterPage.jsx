@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router';
+import { useNavigate, useLocation, Navigate } from 'react-router';
+import { landingFor } from '../../utils/redirect';
 import { useAuth } from '../../hooks/useAuth';
 import { IconBed, IconMail, IconLock, IconEye, IconEyeOff, IconUser, IconPhone, IconArrowRight, IconShield, IconMapPin } from '../../components/Icons';
 import { nameError } from '../../utils/validation';
@@ -18,6 +19,7 @@ const strengthLabels = ['', 'Muy débil', 'Débil', 'Regular', 'Buena', 'Segura'
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { register, user } = useAuth();
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -29,10 +31,7 @@ export default function RegisterPage() {
   const strength = getStrength(form.password);
 
   // Redirigir si ya está logueado
-  if (user) {
-    if (user.role === 'admin') return <Navigate to="/admin" replace />;
-    return <Navigate to="/habitaciones" replace />;
-  }
+  if (user) return <Navigate to={landingFor(user, location.state?.from)} replace />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -142,7 +141,7 @@ export default function RegisterPage() {
 
           <div className={styles['auth-bottom-link']}>
             ¿Ya tienes cuenta?{' '}
-            <a href="#" onClick={e => { e.preventDefault(); navigate('/login'); }}>Inicia sesión</a>
+            <a href="#" onClick={e => { e.preventDefault(); navigate('/login', { state: location.state }); }}>Inicia sesión</a>
           </div>
         </div>
       </div>

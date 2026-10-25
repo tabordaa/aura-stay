@@ -4,9 +4,11 @@ import { extras } from '../mocks/extras';
 import { roomTypes } from '../mocks/roomTypes';
 import { packages } from '../mocks/packages';
 import { buildReservations } from '../mocks/reservations';
+import { buildRooms } from '../mocks/rooms';
+import { todayISO } from '../utils/dates';
 
-// v3: la semilla incluye reservas · v4: totales de paquetes corregidos
-const DB_KEY = 'aura_stay_db_v4';
+// v3: la semilla incluye reservas · v4: totales de paquetes corregidos · v5: llegadas de hoy en la semilla · v6: habitaciones físicas
+const DB_KEY = 'aura_stay_db_v7';
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sin 0/O/1/I para no confundir
 
 // Simula la latencia de red
@@ -16,13 +18,15 @@ export function delay(min = 150, max = 400) {
 }
 
 function seed() {
+  const catalog = [...roomTypes, ...packages];
+  const reservations = buildReservations();
   return {
     users: structuredClone(users),
     extras: structuredClone(extras),
     // Los paquetes comparten colección con los tipos de habitación (category: 'paquete')
-    roomTypes: structuredClone([...roomTypes, ...packages]),
-    rooms: [],
-    reservations: buildReservations(),
+    roomTypes: structuredClone(catalog),
+    rooms: buildRooms(catalog, reservations, todayISO()),
+    reservations,
   };
 }
 

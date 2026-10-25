@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { useNavigate, Navigate, useSearchParams } from 'react-router';
+import { useNavigate, useLocation, Navigate, useSearchParams } from 'react-router';
+import { landingFor } from '../../utils/redirect';
 import { useAuth } from '../../hooks/useAuth';
 import { IconBed, IconMail, IconLock, IconEye, IconEyeOff, IconArrowRight, IconShield } from '../../components/Icons';
 import styles from './Auth.module.css';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, user } = useAuth();
   const [showPass, setShowPass] = useState(false);
   const [email, setEmail] = useState('');
@@ -17,10 +19,7 @@ export default function LoginPage() {
   const sessionExpired = searchParams.get('expired') === '1';
 
   // Redirigir si ya está logueado
-  if (user) {
-    if (user.role === 'admin') return <Navigate to="/admin" replace />;
-    return <Navigate to="/habitaciones" replace />;
-  }
+  if (user) return <Navigate to={landingFor(user, location.state?.from)} replace />;
 
   const fillDemo = (demoEmail, demoPassword) => {
     setEmail(demoEmail);
@@ -100,7 +99,7 @@ export default function LoginPage() {
 
           <div className={styles['auth-bottom-link']}>
             ¿No tienes cuenta?{' '}
-            <a href="#" onClick={e => { e.preventDefault(); navigate('/register'); }}>Regístrate aquí</a>
+            <a href="#" onClick={e => { e.preventDefault(); navigate('/register', { state: location.state }); }}>Regístrate aquí</a>
           </div>
         </div>
       </div>

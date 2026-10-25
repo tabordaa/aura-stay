@@ -63,6 +63,21 @@ export default function StayDrawer({ open, onClose, stay, notice, onReserve }) {
           ) : (
             items.map(item => {
               const { roomType: room, uid } = item;
+              if (item.gone) {
+                // Tipo desactivado o eliminado: solo se puede quitar
+                return (
+                  <div key={uid} className={styles['stay-item']}>
+                    <div className={styles['stay-item-top']}>
+                      <div className={styles['cart-item-info']}>
+                        <p className={styles['cart-item-name']}>Habitación no disponible</p>
+                        <p className={styles['cart-item-unit']}>{formatStayDate(item.checkIn)} → {formatStayDate(item.checkOut)}</p>
+                      </div>
+                      <button className={styles['cart-remove-btn']} onClick={() => remove(uid)} aria-label="Quitar habitación no disponible de tu estadía">🗑</button>
+                    </div>
+                    <p className={styles['stay-problem']} role="alert">{item.error}</p>
+                  </div>
+                );
+              }
               const isPackage = room.category === 'paquete';
               const maxGuests = Math.min(MAX_GUESTS, room.capacity);
               const problem = item.error
