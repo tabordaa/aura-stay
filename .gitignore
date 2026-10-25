@@ -1,0 +1,23 @@
+# Entornos virtuales de Python
+venv/
+env/
+.env
+
+# Archivos compilados de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Configuración de IDEs
+.vscode/
+.idea/
+*.suo
+*.sln
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Bases de datos locales de prueba (SQLite)
+*.db
+*.sqlite3

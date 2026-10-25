@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* =========================================
+   DESIGN TOKENS
+   ========================================= */
+:root {
+  --primary:        #1B5E35;
+  --primary-hover:  #14472A;
+  --primary-light:  #E8F5EE;
+  --primary-mid:    #3D9970;
+
+  --bg-gradient-start: #EBF5EB;
+  --bg-gradient-end:   #F4FAF4;
+
+  --card-bg:        #FFFFFF;
+  --card-shadow:    0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+
+  --text-primary:   #1A2B1A;
+  --text-secondary: #5C6E5C;
+  --text-muted:     #8FA08F;
+  --text-link:      #1B5E35;
+
+  --border:         #D6E9D6;
+  --input-bg:       #F8FCF8;
+  --input-border:   #C8DFC8;
+  --input-focus:    #1B5E35;
+
+  --sidebar-w:      200px;
+  --navbar-h:       60px;
+
+  --radius-sm:  8px;
+  --radius-md:  14px;
+  --radius-lg:  20px;
+  --radius-xl:  32px;
+
+  --transition: 0.2s ease;
+}
+
+/* =========================================
+   RESET & BASE
+   ========================================= */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html { font-size: 16px; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-gradient-start);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+a {
+  color: var(--text-link);
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity var(--transition);
+}
+a:hover { opacity: 0.75; }
+
+button {
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+input {
+  font-family: 'Inter', sans-serif;
+  outline: none;
+}
+

@@ -1,0 +1,51 @@
+/* Mapas (Leaflet): mismos bordes y radios que los paneles de la app */
+.map {
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border);
+  overflow: hidden;
+  background: var(--primary-light);
+  z-index: 0; /* los paneles de Leaflet usan z-index altos: así no tapan modales ni el navbar */
+  position: relative;
+}
+.map.disabled { opacity: 0.6; pointer-events: none; }
+
+.pin {
+  width: 36px;
+  height: 36px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  border: 2px solid #fff;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+}
+.pin i { transform: rotate(45deg); font-style: normal; line-height: 1; }
+.pin-store { background: var(--primary); }
+.pin-destination { background: #fff0e8; border-color: #bc6332; }
+
+.picker { display: flex; flex-direction: column; gap: 8px; }
+.picker-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.picker-hint { font-size: 0.8rem; color: var(--text-secondary); }
+.picker-btn {
+  padding: 7px 14px;
+  border-radius: var(--radius-xl);
+  border: 1.5px solid var(--primary);
+  background: #fff;
+  color: var(--primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background var(--transition);
+}
+.picker-btn:hover:not(:disabled) { background: var(--primary-light); }
+.picker-btn:disabled { opacity: 0.6; cursor: progress; }
+.picker-error { font-size: 0.78rem; color: #b3261e; }
