@@ -3,7 +3,7 @@ import { authService } from '../services/auth.service';
 import { AUTH_EXPIRED_EVENT } from '../services/api';
 import { AuthContext } from './authContextObject';
 import { clearLegacyOrderStorage } from '../utils/orders';
-import { cartStorageKey } from '../hooks/useCart';
+import { stayStorageKey } from '../hooks/useStay';
 import { useNavigate } from 'react-router';
 import styles from './AuthContext.module.css';
 import ordersStyles from '../pages/orders/Orders.module.css';
@@ -58,8 +58,8 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    // En un computador compartido, el siguiente usuario no debe ver el carrito del anterior
-    if (user) localStorage.removeItem(cartStorageKey(user.id));
+    // En un computador compartido, el siguiente usuario no debe ver la estadía del anterior
+    if (user) localStorage.removeItem(stayStorageKey(user.id));
     clearLegacyOrderStorage();
     authService.logout();
     setUser(null);

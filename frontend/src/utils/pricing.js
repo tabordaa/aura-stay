@@ -29,3 +29,17 @@ export function stayQuote({ roomType, checkIn, checkOut, guests = 1, extras = []
   const taxes = Math.round((subtotal + extras_total) * TAX_RATE);
   return { nights: n, subtotal, extras_total, taxes, total: subtotal + extras_total + taxes };
 }
+
+// Suma varias cotizaciones (una por habitación) en el resumen de "Mi estadía".
+export function combineQuotes(quotes) {
+  return quotes.reduce(
+    (sum, q) => ({
+      nights: sum.nights + q.nights,
+      subtotal: sum.subtotal + q.subtotal,
+      extras_total: sum.extras_total + q.extras_total,
+      taxes: sum.taxes + q.taxes,
+      total: sum.total + q.total,
+    }),
+    { nights: 0, subtotal: 0, extras_total: 0, taxes: 0, total: 0 },
+  );
+}
