@@ -635,7 +635,7 @@
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
 /* =========================================
-   MIS PEDIDOS + PEDIDO ACTIVO
+   BANNER "TU PRÓXIMA ESTADÍA"
    ========================================= */
 .orders-btn {
   display: flex;
@@ -793,7 +793,7 @@
 }
 .btn-checkout { margin-top: 16px; margin-bottom: 0; }
 
-/* Cargando, error y sin resultados (mismo estilo que Mis pedidos) */
+/* Cargando, error y sin resultados (mismo estilo que Mis reservas) */
 @keyframes catalog-spin { to { transform: rotate(360deg); } }
 .catalog-state {
   margin-top: 20px;

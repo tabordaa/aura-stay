@@ -4,6 +4,7 @@ import { stayQuote } from '../utils/pricing';
 import { formatStayDate } from '../utils/dates';
 import { validateStay } from '../utils/stay';
 import { validateHolder } from '../utils/validation';
+import { canCancel, CANCELLABLE, CANCEL_TOO_LATE_MESSAGE } from '../utils/reservations';
 import { getSessionUserId } from './auth.service';
 
 function requireUser(db) {
@@ -32,6 +33,26 @@ function validatePayment(p = {}) {
     return { method: 'card', last4: String(p.card_last4) };
   }
   throw new Error('Elige un método de pago');
+}
+
+// Agrega lo necesario para mostrar la reserva (habitación y nombres de extras) sin tocar lo guardado
+function withRoom(db, res) {
+  const rt = db.roomTypes.find((r) => r.id === res.room_type_id);
+  return {
+    ...res,
+    room: {
+      name: rt?.name ?? 'Habitación',
+      image: rt?.images?.[0] ?? null,
+      category: rt?.category ?? 'habitacion',
+      beds: rt?.beds ?? '',
+      size_m2: rt?.size_m2 ?? null,
+    },
+    extra_lines: (res.extras ?? []).map((x) => ({
+      extra_id: x.extra_id,
+      qty: x.qty,
+      name: db.extras.find((e) => e.id === x.extra_id)?.name ?? 'Servicio adicional',
+    })),
+  };
 }
 
 const sortNewest = (a, b) => b.created_at.localeCompare(a.created_at);
@@ -112,7 +133,7 @@ export const reservationsService = {
     await delay();
     const db = loadDb();
     const user = requireUser(db);
-    return db.reservations.filter((r) => r.user_id === user.id).sort(sortNewest);
+    return db.reservations.filter((r) => r.user_id === user.id).sort(sortNewest).map((r) => withRoom(db, r));
   },
 
   async get(id) {
@@ -121,6 +142,22 @@ export const reservationsService = {
     const user = requireUser(db);
     const found = db.reservations.find((r) => r.id === id && r.user_id === user.id);
     if (!found) throw new Error('Reserva no encontrada');
-    return found;
+    return withRoom(db, found);
+  },
+
+  // Solo el dueño, solo pendiente/confirmada y con más de 48 h de margen. Al pasar a `cancelada`
+  // deja de contar en la disponibilidad (checkRoomAvailability solo cuenta estados activos).
+  async cancel(id) {
+    await delay();
+    const db = loadDb();
+    const user = requireUser(db);
+    const found = db.reservations.find((r) => r.id === id && r.user_id === user.id);
+    if (!found) throw new Error('Reserva no encontrada');
+    if (!CANCELLABLE.includes(found.status)) throw new Error('Esta reserva ya no se puede cancelar.');
+    if (!canCancel(found)) throw new Error(CANCEL_TOO_LATE_MESSAGE);
+    found.status = 'cancelada';
+    found.cancelled_at = new Date().toISOString();
+    saveDb(db);
+    return withRoom(db, found);
   },
 };

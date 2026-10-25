@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { IconMail, IconMapPin, IconPhone, IconUser } from '../../components/Icons';
 import { useAuth } from '../../hooks/useAuth';
 import { initials, parseServerDate } from '../../utils/format';
-import OrdersTopbar from '../orders/OrdersTopbar';
+import ReservationsTopbar from '../reservations/ReservationsTopbar';
 import styles from './Profile.module.css';
 
 function onlyDigits(value) {
@@ -65,7 +65,7 @@ export default function ProfilePage() {
 
   return (
     <div className={styles.page}>
-      <OrdersTopbar />
+      <ReservationsTopbar />
       <main className={styles.container}>
         <div className={styles.head}>
           <h1>Mi perfil</h1>

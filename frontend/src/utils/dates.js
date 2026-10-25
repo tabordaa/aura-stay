@@ -29,6 +29,11 @@ export function formatStayDate(iso) {
     .replace(/[.,]/g, '');
 }
 
+// "14 de noviembre de 2026"
+export function formatLongDate(iso) {
+  return new Date(iso).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
 // "vie 14 nov → lun 17 nov"
 export function formatStayRange(checkIn, checkOut) {
   return `${formatStayDate(checkIn)} → ${formatStayDate(checkOut)}`;
