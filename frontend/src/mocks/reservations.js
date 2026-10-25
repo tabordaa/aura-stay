@@ -27,6 +27,9 @@ export function buildReservations(today = todayISO()) {
       { rejection_reason: 'La suite está reservada para un evento privado en esas fechas.' }],
     ['AS-C8A3ZD', 'exc-presidencial', 20, 23, 2, 'pendiente', 'hotel', []],
     ['AS-N6H4YS', 'hab-estandar', 3, 5, 1, 'confirmada', 'card', [['ex_breakfast', 1]]],
+    // Llegadas de hoy: permiten demostrar aprobar y check-in sin esperar
+    ['AS-Y5G8BR', 'hab-vista-ciudad', 0, 2, 2, 'confirmada', 'card', []],
+    ['AS-E3U7PN', 'hab-superior', 0, 1, 2, 'pendiente', 'hotel', []],
   ];
 
   return rows.map(([code, roomTypeId, inOffset, outOffset, guests, status, payment, lines, extra = {}], i) => {

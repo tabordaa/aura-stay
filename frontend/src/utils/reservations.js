@@ -70,3 +70,34 @@ export const PAYMENT_LABELS = {
   card: 'Tarjeta crédito / débito',
   hotel: 'Pagar en el hotel',
 };
+
+// Máquina de estados del admin (única fuente: la usan el servicio y la UI)
+export const ADMIN_TRANSITIONS = {
+  approve:  { from: 'pendiente',  to: 'confirmada', label: 'Aprobar' },
+  reject:   { from: 'pendiente',  to: 'rechazada',  label: 'Rechazar' },
+  checkIn:  { from: 'confirmada', to: 'en_curso',   label: 'Check-in' },
+  checkOut: { from: 'en_curso',   to: 'finalizada', label: 'Check-out' },
+};
+
+// Mensaje claro cuando la acción no es válida para la reserva (null si lo es)
+export function transitionError(reservation, action, today = todayISO()) {
+  const rule = ADMIN_TRANSITIONS[action];
+  if (!rule) return 'Acción no válida';
+  if (!reservation) return 'La reserva no existe';
+  if (reservation.status !== rule.from) {
+    return `No se puede aplicar "${rule.label}" a una reserva ${statusMeta(reservation.status).label.toLowerCase()}`;
+  }
+  // El check-in solo se marca dentro de la estadía: desde el día de llegada y antes de la salida
+  if (action === 'checkIn') {
+    if (today < reservation.check_in) return 'Todavía no es el día de llegada: no se puede hacer el check-in';
+    if (today >= reservation.check_out) return 'La fecha de salida ya pasó: no se puede hacer el check-in';
+  }
+  return null;
+}
+
+export const canTransition = (reservation, action, today = todayISO()) =>
+  transitionError(reservation, action, today) === null;
+
+// Longitud permitida del motivo de rechazo
+export const REASON_MIN = 5;
+export const REASON_MAX = 200;
