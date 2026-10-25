@@ -1,11 +1,13 @@
-import { Navigate } from 'react-router';
+import { Navigate, useLocation } from 'react-router';
 import { useAuth } from '../hooks/useAuth';
 
 export default function ProtectedRoute({ children, allowedRoles }) {
   const { user } = useAuth();
-  
+  const location = useLocation();
+
   if (!user) {
-    return <Navigate to="/login" replace />;
+    // Se recuerda la ruta pedida para volver a ella tras iniciar sesión
+    return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
