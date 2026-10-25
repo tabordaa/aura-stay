@@ -18,6 +18,7 @@ export default function MyReservationsPage() {
   const [reservations, setReservations] = useState(null);
   const [error, setError] = useState('');
   const [tab, setTab] = useState('proximas');
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -25,13 +26,14 @@ export default function MyReservationsPage() {
       .then(list => { if (!cancelled) setReservations(list); })
       .catch(() => { if (!cancelled) setError('No pudimos cargar tus reservas. Intenta de nuevo en un momento.'); });
     return () => { cancelled = true; };
-  }, []);
+  }, [retryKey]);
 
+  const retry = () => { setError(''); setRetryKey(k => k + 1); };
   const visible = reservations ? filterByTab(reservations, tab) : [];
 
   let content;
   if (error) {
-    content = <div className={styles['state-card']} role="alert"><span className={styles['state-icon']}>📡</span><p>{error}</p></div>;
+    content = <div className={styles['state-card']} role="alert"><span className={styles['state-icon']}>📡</span><p>{error}</p><button type="button" className={styles['btn-secondary']} onClick={retry}>Reintentar</button></div>;
   } else if (!reservations) {
     content = <div className={styles['state-card']} role="status"><span className={styles.spinner} /> Cargando tus reservas…</div>;
   } else if (visible.length === 0) {

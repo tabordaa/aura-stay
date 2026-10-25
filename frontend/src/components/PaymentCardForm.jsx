@@ -37,7 +37,7 @@ export default function PaymentCardForm({ card, setCard, fieldError, touch, disa
           <div className={styles['card-front']} data-brand={brand || 'none'}>
             <div className={styles['card-top']}>
               <span className={styles['card-chip']} />
-              <span className={styles['card-brand']}>{BRAND_LABELS[brand] || 'Aura Pay'}</span>
+              <span className={styles['card-brand']}>{BRAND_LABELS[brand] || 'Aura Stay'}</span>
             </div>
             <div className={styles['card-number']}>{maskedNumber}</div>
             <div className={styles['card-bottom']}>

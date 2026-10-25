@@ -8,6 +8,7 @@ import { CATEGORIES } from '../../utils/categories';
 import { useAuth } from '../../hooks/useAuth';
 import { roomsService } from '../../services/rooms.service';
 import styles from './Home.module.css';
+import { APP_NAME } from '../../utils/brand';
 
 const HERO_IMAGE = 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=1600&q=80';
 const FEATURED_COUNT = 4;
@@ -135,7 +136,7 @@ export default function HomePage() {
 
       <footer className={styles['footer']}>
         <div className={styles['footer-inner']}>
-          <div className={styles['footer-brand']}><IconBed size={20} /> {import.meta.env.VITE_APP_NAME || 'Aura Stay'}</div>
+          <div className={styles['footer-brand']}><IconBed size={20} /> {APP_NAME}</div>
           <nav className={styles['footer-links']} aria-label="Enlaces del pie de página">
             <button type="button" onClick={() => goTo('/habitaciones')}>Habitaciones</button>
             <button type="button" onClick={() => navigate('/login')}>Iniciar sesión</button>

@@ -22,7 +22,7 @@
 /* Top bar */
 .topbar {
   height: var(--navbar-h);
-  background: #fff;
+  background: var(--card-bg);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -80,10 +80,10 @@
 }
 .btn-primary { background: var(--primary); color: #fff; }
 .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
-.btn-secondary { background: #fff; color: var(--primary); border: 1.5px solid var(--primary); }
+.btn-secondary { background: var(--card-bg); color: var(--primary); border: 1.5px solid var(--primary); }
 .btn-secondary:hover { background: var(--primary-light); }
 /* Acciones destructivas: mismos colores que Rechazar en el panel admin */
-.btn-cancel { background: #fff; color: var(--error); border: 1.5px solid var(--error-border); }
+.btn-cancel { background: var(--card-bg); color: var(--error); border: 1.5px solid var(--error-border); }
 .btn-cancel:hover { background: var(--error-bg); border-color: var(--error-strong); }
 .btn-danger { background: var(--error-strong); color: #fff; }
 .btn-danger:hover:not(:disabled) { background: var(--error); }
@@ -91,7 +91,7 @@
 
 /* Loading / empty / not found */
 .state-card {
-  background: #fff;
+  background: var(--card-bg);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 48px 24px;
@@ -144,7 +144,7 @@
 .hero-icon {
   width: 58px; height: 58px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--card-bg);
   display: flex; align-items: center; justify-content: center;
   font-size: 1.8rem;
   flex-shrink: 0;
@@ -164,7 +164,7 @@
 .hero-status p { font-size: 0.92rem; color: var(--text-secondary); margin-top: 3px; }
 
 .eta {
-  background: #fff;
+  background: var(--card-bg);
   border-radius: var(--radius-md);
   padding: 16px 22px;
   text-align: center;
@@ -191,7 +191,7 @@
 
 /* Panels */
 .panel {
-  background: #fff;
+  background: var(--card-bg);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 22px;
@@ -239,7 +239,7 @@
 .progress-dot {
   width: 44px; height: 44px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--card-bg);
   border: 2px solid var(--border);
   display: flex; align-items: center; justify-content: center;
   font-size: 1.2rem;
@@ -352,7 +352,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  background: #fff;
+  background: var(--card-bg);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-md);
   padding: 14px 18px;
@@ -391,7 +391,7 @@
   font-size: 0.85rem;
   font-weight: 500;
   border: 1.5px solid var(--border);
-  background: #fff;
+  background: var(--card-bg);
   color: var(--text-secondary);
   transition: all var(--transition);
 }
@@ -403,7 +403,7 @@
 .muted { color: var(--text-muted); font-size: 0.8rem !important; }
 .hint { text-align: center; color: var(--text-muted); font-size: 0.85rem; }
 .notice {
-  background: #eef1ee;
+  background: var(--neutral-bg);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-md);
   padding: 14px 18px;
@@ -426,7 +426,7 @@
 .modal {
   width: 420px;
   max-width: 100%;
-  background: #fff;
+  background: var(--card-bg);
   border-radius: var(--radius-lg);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
   padding: 26px;

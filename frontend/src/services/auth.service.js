@@ -75,6 +75,7 @@ export const authService = {
       phone: String(phone ?? '').trim(),
       document: '',
       city: String(city ?? '').trim(),
+      created_at: new Date().toISOString(),
     };
     db.users.push(user);
     saveDb(db);

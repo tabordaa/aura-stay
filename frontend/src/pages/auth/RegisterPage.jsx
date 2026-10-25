@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { IconBed, IconMail, IconLock, IconEye, IconEyeOff, IconUser, IconPhone, IconArrowRight, IconShield, IconMapPin } from '../../components/Icons';
 import { nameError } from '../../utils/validation';
 import styles from './Auth.module.css';
+import { APP_NAME } from '../../utils/brand';
 
 function getStrength(p) {
   let s = 0;
@@ -59,13 +60,13 @@ export default function RegisterPage() {
   return (
     <div className={styles['auth-page']}>
       <div className={styles['auth-topbar']}>
-        <div className={styles['brand']}><IconBed size={22} /> {import.meta.env.VITE_APP_NAME || 'Aura Stay'}</div>
+        <div className={styles['brand']}><IconBed size={22} /> {APP_NAME}</div>
       </div>
 
       <div className={styles['auth-body']}>
         <div className={[styles['auth-card'], styles['auth-card-register']].join(' ')}>
           <div className={styles['card-brand']}>
-            <div className={[styles.brand, styles['brand-lg']].join(' ')}><IconBed size={26} /> {import.meta.env.VITE_APP_NAME || 'Aura Stay'}</div>
+            <div className={[styles.brand, styles['brand-lg']].join(' ')}><IconBed size={26} /> {APP_NAME}</div>
             <h2>Crea tu cuenta</h2>
             <p className={styles['subtitle']}>Reserva tu próxima estadía, rápido y fácil</p>
           </div>

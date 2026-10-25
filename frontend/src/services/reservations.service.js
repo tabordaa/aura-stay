@@ -1,7 +1,7 @@
 import { delay, loadDb, saveDb, newId, newReservationCode } from './mockApi';
 import { checkRoomAvailability } from './rooms.service';
 import { stayQuote } from '../utils/pricing';
-import { formatStayDate } from '../utils/dates';
+import { formatShortDate } from '../utils/dates';
 import { validateStay } from '../utils/stay';
 import { validateHolder } from '../utils/validation';
 import { canCancel, CANCELLABLE, CANCEL_TOO_LATE_MESSAGE } from '../utils/reservations';
@@ -87,7 +87,7 @@ export const reservationsService = {
       }
       const check = checkRoomAvailability(roomType, stay, [...db.reservations, ...created]);
       if (!check.available) {
-        throw new Error(`Ya no hay disponibilidad de ${roomType.name} del ${formatStayDate(stay.checkIn)} al ${formatStayDate(check.end)}. Cambia las fechas o elige otra habitación.`);
+        throw new Error(`Ya no hay disponibilidad de ${roomType.name} del ${formatShortDate(stay.checkIn)} al ${formatShortDate(check.end)}. Cambia las fechas o elige otra habitación.`);
       }
 
       const lines = (item.extras ?? []).map((x) => ({

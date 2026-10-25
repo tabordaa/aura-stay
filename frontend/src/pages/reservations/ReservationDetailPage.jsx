@@ -18,6 +18,7 @@ export default function ReservationDetailPage() {
   const [cancelling, setCancelling] = useState(false);
   const [actionError, setActionError] = useState('');
   const [toast, setToast] = useState('');
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -29,7 +30,7 @@ export default function ReservationDetailPage() {
         setState({ id, reservation: null, notFound, error: notFound ? '' : 'No pudimos cargar tu reserva. Intenta de nuevo en un momento.' });
       });
     return () => { active = false; };
-  }, [id]);
+  }, [id, retryKey]);
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -68,7 +69,7 @@ export default function ReservationDetailPage() {
       </div>
     );
   } else if (!reservation) {
-    content = <div className={styles['state-card']} role="alert"><span className={styles['state-icon']}>📡</span><p>{error}</p></div>;
+    content = <div className={styles['state-card']} role="alert"><span className={styles['state-icon']}>📡</span><p>{error}</p><button type="button" className={styles['btn-secondary']} onClick={() => { setState({ id: null, reservation: null, notFound: false, error: '' }); setRetryKey(k => k + 1); }}>Reintentar</button></div>;
   } else {
     const r = reservation;
     const meta = statusMeta(r.status);
