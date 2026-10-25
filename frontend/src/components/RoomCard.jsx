@@ -8,7 +8,7 @@ import styles from '../pages/catalog/Catalog.module.css';
 // Chips visibles por tarjeta (el resto se ve en el detalle, S05)
 const MAX_AMENITIES = 4;
 
-export default function RoomCard({ room, favorites, toggleFav, onSelect, stay, availability }) {
+export default function RoomCard({ room, favorites, toggleFav, onSelect, stay, availability, actionLabel = 'Ver detalles' }) {
   const [imgError, setImgError] = useState(false);
   const isFav = favorites.includes(room.id);
   const isPackage = room.category === 'paquete';
@@ -77,7 +77,7 @@ export default function RoomCard({ room, favorites, toggleFav, onSelect, stay, a
           onClick={() => onSelect?.(room)}
           disabled={!onSelect}
         >
-          Ver detalles <IconArrowRight size={13} />
+          {actionLabel} <IconArrowRight size={13} />
         </button>
         {quote && (
           <span className={styles['card-stay-total']} title="Total con impuestos">
