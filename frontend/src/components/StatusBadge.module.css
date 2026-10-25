@@ -11,6 +11,6 @@
 }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .status-pending  { background: var(--error-bg); color: var(--error); }
-.status-progress { background: #FFF3CD; color: #856404; }
+.status-progress { background: var(--warning-bg); color: var(--warning); }
 .status-done     { background: var(--primary-light); color: var(--primary); }
-.status-rejected { background: #eef1ee; color: #6b776b; }
+.status-rejected { background: var(--neutral-bg); color: var(--neutral); }
