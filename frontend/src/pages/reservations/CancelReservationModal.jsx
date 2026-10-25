@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef } from 'react';
+import { useId, useRef } from 'react';
+import useFocusTrap from '../../hooks/useFocusTrap';
 import styles from './Reservations.module.css';
 
 // Confirmación de cancelación: foco inicial en "Mantener reserva" y cierre con Escape
@@ -6,21 +7,12 @@ export default function CancelReservationModal({ reservation, busy, error, onCon
   const keepRef = useRef(null);
   const titleId = useId();
 
-  useEffect(() => {
-    const previous = document.activeElement;
-    keepRef.current?.focus();
-    return () => previous?.focus?.();
-  }, []);
-
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape' && !busy) onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose, busy]);
+  const dialogRef = useRef(null);
+  useFocusTrap(dialogRef, { initialFocusRef: keepRef, onEscape: busy ? undefined : onClose });
 
   return (
     <div className={styles.overlay} onClick={e => { if (e.target === e.currentTarget && !busy) onClose(); }}>
-      <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <div className={styles.modal} ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <h2 id={titleId}>¿Cancelar tu reserva?</h2>
         <p>
           Vas a cancelar <strong>{reservation.room.name}</strong> ({reservation.code}).

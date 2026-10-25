@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import useFocusTrap from '../../hooks/useFocusTrap';
 import StatusBadge from '../../components/StatusBadge';
 import { adminService } from '../../services/admin.service';
 import { formatStayDate } from '../../utils/dates';
@@ -12,17 +13,8 @@ export default function GuestDetailModal({ guest, onClose }) {
   const closeRef = useRef(null);
   const titleId = useId();
 
-  useEffect(() => {
-    const previous = document.activeElement;
-    closeRef.current?.focus();
-    return () => previous?.focus?.();
-  }, []);
-
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  const dialogRef = useRef(null);
+  useFocusTrap(dialogRef, { initialFocusRef: closeRef, onEscape: onClose });
 
   useEffect(() => {
     let alive = true;
@@ -37,7 +29,7 @@ export default function GuestDetailModal({ guest, onClose }) {
 
   return (
     <div className={styles['modal-overlay']} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className={[styles.modal, styles['modal-wide']].join(' ')} role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <div className={[styles.modal, styles['modal-wide']].join(' ')} ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <div className={styles['modal-head']}>
           <div>
             <h2 id={titleId}>{g.name}</h2>

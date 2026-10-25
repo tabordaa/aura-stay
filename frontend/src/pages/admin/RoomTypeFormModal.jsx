@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
+import useFocusTrap from '../../hooks/useFocusTrap';
 import { AMENITIES, CATEGORIES } from '../../utils/categories';
 import { ROOM_LIMITS, isHttps, validateRoomType } from '../../utils/validation';
 import styles from './Admin.module.css';
@@ -54,11 +55,9 @@ export default function RoomTypeFormModal({ room, defaultCategory, baseTypes = [
   // Tras el primer intento de guardar, los errores se actualizan mientras se escribe
   const errors = submitted ? validateRoomType(toPayload(form)) : {};
 
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape' && !saving) onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose, saving]);
+  const dialogRef = useRef(null);
+  const nameRef = useRef(null);
+  useFocusTrap(dialogRef, { initialFocusRef: nameRef, onEscape: saving ? undefined : onClose });
 
   const setField = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
   const toggleAmenity = (key) => setForm((f) => ({
@@ -102,6 +101,8 @@ export default function RoomTypeFormModal({ room, defaultCategory, baseTypes = [
     <div className={styles['modal-overlay']} onClick={() => !saving && onClose()}>
       <form
         className={styles.modal}
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="room-form-title"
@@ -121,7 +122,7 @@ export default function RoomTypeFormModal({ room, defaultCategory, baseTypes = [
           <div className={styles['form-grid']}>
             <div className={[styles.field, styles['field-wide']].join(' ')}>
               <label className={styles.label} htmlFor="rt-name">Nombre</label>
-              <input id="rt-name" className={styles.input} value={form.name} onChange={setField('name')} placeholder="Ej. Suite con Jacuzzi" maxLength={ROOM_LIMITS.nameMax} disabled={saving} autoFocus {...a11y('name')} />
+              <input id="rt-name" className={styles.input} value={form.name} onChange={setField('name')} placeholder="Ej. Suite con Jacuzzi" maxLength={ROOM_LIMITS.nameMax} disabled={saving} ref={nameRef} {...a11y('name')} />
               {fieldError('name')}
             </div>
             <div className={styles.field}>

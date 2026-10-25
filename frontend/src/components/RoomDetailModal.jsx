@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
+import useFocusTrap from '../hooks/useFocusTrap';
 import { IconCheck } from './Icons';
 import { formatPrice } from '../utils/format';
 import { addDays, formatStayDate } from '../utils/dates';
@@ -24,18 +25,8 @@ export default function RoomDetailModal({ room, stay, availability, onClose, onA
   const closeRef = useRef(null);
   const titleId = useId();
 
-  // Foco inicial en el modal y devolución al elemento que lo abrió
-  useEffect(() => {
-    const previous = document.activeElement;
-    closeRef.current?.focus();
-    return () => previous?.focus?.();
-  }, []);
-
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  const dialogRef = useRef(null);
+  useFocusTrap(dialogRef, { initialFocusRef: closeRef, onEscape: onClose });
 
   const isPackage = room.category === 'paquete';
   const images = room.images ?? [];
@@ -57,6 +48,8 @@ export default function RoomDetailModal({ room, stay, availability, onClose, onA
     <div className={styles.overlay} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div
         className={styles.modal}
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
