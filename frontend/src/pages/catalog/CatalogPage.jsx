@@ -3,18 +3,14 @@ import { useNavigate, useSearchParams } from 'react-router';
 import { IconBed, IconBolt, IconCheck } from '../../components/Icons';
 import Navbar from '../../components/Navbar';
 import RoomCard from '../../components/RoomCard';
-import CartDrawer from '../../components/CartDrawer';
-import CheckoutModal from '../../components/CheckoutModal';
+import StayDrawer from '../../components/StayDrawer';
 import RoomDetailModal from '../../components/RoomDetailModal';
-import ActiveOrderBanner from '../../components/ActiveOrderBanner';
 import StaySearchBar from '../../components/StaySearchBar';
 import { activeStay, readStay } from '../../utils/stay';
-import { isActiveOrder } from '../../utils/orders';
 import { CATEGORIES } from '../../utils/categories';
 import { useAuth } from '../../hooks/useAuth';
-import { useCart } from '../../hooks/useCart';
+import { useStay } from '../../hooks/useStay';
 import { roomsService } from '../../services/rooms.service';
-import { orderService } from '../../services/order.service';
 import styles from './Catalog.module.css';
 
 const SORTS = [
@@ -37,8 +33,6 @@ export default function CatalogPage() {
   const [query, setQuery] = useState('');
   const [favorites, setFavorites] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [latestOrderId, setLatestOrderId] = useState(null);
   const [rooms, setRooms] = useState([]);
   const [catalogState, setCatalogState] = useState('loading'); // loading | ready | error
   const [retryKey, setRetryKey] = useState(0);
@@ -53,8 +47,7 @@ export default function CatalogPage() {
   const stayKey = stay ? `${stay.checkIn}|${stay.checkOut}|${stay.guests}` : '';
   const availabilityMap = stayKey && availability.key === stayKey ? availability.map : null;
 
-  // "Mi estadía" se rehace en S06; mientras tanto el carrito heredado queda vacío
-  const { cart, changeQty, removeFromCart, clearCart } = useCart(user?.id, []);
+  const stayCart = useStay(user?.id);
 
   useEffect(() => {
     const timer = setTimeout(() => setQuery(search), SEARCH_DEBOUNCE_MS);
@@ -95,28 +88,17 @@ export default function CatalogPage() {
 
   const retryCatalog = () => { setCatalogState('loading'); setRetryKey(k => k + 1); };
 
-  // Muestra el aviso de seguimiento si el cliente tiene un pedido en curso
-  useEffect(() => {
-    orderService.getMyOrders(5)
-      .then(orders => {
-        const active = orders.find(o => isActiveOrder(o.status));
-        if (active) setLatestOrderId(active.id);
-      })
-      .catch(() => {});
-  }, []);
-
-  const cartCount = cart.reduce((acc, item) => acc + item.qty, 0);
-  const cartSubtotal = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
-  const deliveryCost = 0;
-  const cartTotal = cartSubtotal + deliveryCost;
-
-  const closeCheckout = useCallback(() => setCheckoutOpen(false), []);
+  const closeCart = useCallback(() => setCartOpen(false), []);
   const closeDetail = useCallback(() => setSelectedRoom(null), []);
-  // Temporal hasta S06 ("Mi estadía"): cierra el detalle y avisa
-  const handleAddStay = useCallback(() => {
+  // Agrega a "Mi estadía" y abre el drawer; la misma habitación con las mismas fechas no se duplica
+  const handleAddStay = (item) => {
+    const result = stayCart.add(item);
     setSelectedRoom(null);
-    setNotice('Pronto podrás completar tu reserva desde Mi estadía.');
-  }, []);
+    setNotice(result === 'duplicate' ? 'Ya está en tu estadía' : 'Agregada a tu estadía');
+    setCartOpen(true);
+  };
+  // TODO S07: abrir aquí el modal "Confirmar reserva" con los datos de la estadía
+  const handleReserve = () => setNotice('Muy pronto podrás confirmar tu reserva.');
 
   const toggleFav = (id) => setFavorites(f => f.includes(id) ? f.filter(x => x !== id) : [...f, id]);
   const setFilter = (key) => (e) => setFilters(f => ({ ...f, [key]: e.target.value }));
@@ -139,15 +121,13 @@ export default function CatalogPage() {
         <Navbar
           search={search}
           setSearch={setSearch}
-          cartCount={cartCount}
+          cartCount={stayCart.count}
           setCartOpen={setCartOpen}
           navigate={navigate}
         />
 
         <div className={styles['catalog-body']}>
           <main className={styles['catalog-main']}>
-            {latestOrderId && <ActiveOrderBanner orderId={latestOrderId} />}
-
             {/* Welcome Banner */}
             <div className={styles['welcome-banner']}>
               <div className={styles['banner-left']}>
@@ -168,7 +148,7 @@ export default function CatalogPage() {
               onSearch={applyStay}
               onClear={clearStay}
             />
-            {notice && <p className={styles['cart-notice']} role="status">{notice}</p>}
+            {notice && !cartOpen && <p className={styles['cart-notice']} role="status">{notice}</p>}
 
             {/* Section header */}
             <div className={styles['section-header']}>
@@ -277,30 +257,12 @@ export default function CatalogPage() {
         />
       )}
 
-      <CartDrawer
-        cartOpen={cartOpen}
-        setCartOpen={setCartOpen}
-        cart={cart}
-        cartCount={cartCount}
-        cartSubtotal={cartSubtotal}
-        deliveryCost={deliveryCost}
-        cartTotal={cartTotal}
-        changeQty={changeQty}
-        removeFromCart={removeFromCart}
+      <StayDrawer
+        open={cartOpen}
+        onClose={closeCart}
+        stay={stayCart}
         notice={notice}
-        onCheckout={() => { setCartOpen(false); setCheckoutOpen(true); }}
-      />
-
-      <CheckoutModal
-        open={checkoutOpen}
-        onClose={closeCheckout}
-        cart={cart}
-        cartCount={cartCount}
-        cartSubtotal={cartSubtotal}
-        deliveryCost={deliveryCost}
-        cartTotal={cartTotal}
-        clearCart={clearCart}
-        onOrderPlaced={(receipt) => setLatestOrderId(receipt.id)}
+        onReserve={handleReserve}
       />
     </>
   );

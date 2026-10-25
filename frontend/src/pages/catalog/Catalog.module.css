@@ -527,26 +527,6 @@
 .cart-empty p    { font-weight: 600; font-size: 1rem; color: var(--text-secondary); }
 .cart-empty span { font-size: 0.85rem; text-align: center; }
 
-/* Single cart item */
-.cart-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 22px;
-  border-bottom: 1px solid var(--border);
-  transition: background var(--transition);
-}
-.cart-item:hover { background: var(--input-bg); }
-
-.cart-item-emoji {
-  font-size: 2rem;
-  width: 44px; height: 44px;
-  background: var(--primary-light);
-  border-radius: var(--radius-sm);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-
 .cart-item-info {
   flex: 1;
   min-width: 0;
@@ -652,6 +632,7 @@
   background: var(--primary-hover);
   transform: translateY(-1px);
 }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
 /* =========================================
    MIS PEDIDOS + PEDIDO ACTIVO
@@ -892,7 +873,11 @@
 .tab-btn:focus-visible,
 .btn-add:focus-visible,
 .card-fav:focus-visible,
-.btn-secondary:focus-visible {
+.btn-secondary:focus-visible,
+.qty-btn:focus-visible,
+.cart-close-btn:focus-visible,
+.cart-remove-btn:focus-visible,
+.btn-checkout:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
@@ -939,3 +924,58 @@
   .cta-banner { flex-direction: column; gap: 14px; text-align: center; }
   .cta-banner-left { flex-direction: column; }
 }
+
+/* Mi estadía: item con fechas, huéspedes y extras editables */
+.stay-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+}
+.stay-item-top { display: flex; align-items: center; gap: 12px; }
+.stay-fields { display: grid; grid-template-columns: 1fr 1fr 70px; gap: 8px; }
+.stay-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.stay-field label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.stay-field input,
+.stay-field select {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  background: var(--input-bg);
+  color: var(--text-primary);
+}
+.stay-field input:focus,
+.stay-field select:focus { outline: none; border-color: var(--input-focus); }
+.stay-field input[aria-invalid='true'] { border-color: var(--error-strong); }
+.stay-field input:disabled { opacity: 0.6; }
+.stay-hint { font-size: 0.75rem; color: var(--text-muted); }
+.stay-problem {
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  color: var(--error);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.stay-extras { display: flex; flex-direction: column; gap: 6px; }
+.stay-extras-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.stay-extra-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.stay-extra-name { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); }
+.stay-footer-hint { margin-top: 8px; font-size: 0.8rem; color: var(--text-secondary); text-align: center; }
