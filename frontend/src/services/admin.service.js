@@ -1,6 +1,7 @@
-import { delay, loadDb, saveDb } from './mockApi';
+import { delay, loadDb, newId, saveDb } from './mockApi';
 import { getSessionUserId } from './auth.service';
 import { todayISO } from '../utils/dates';
+import { validateRoomType } from '../utils/validation';
 import { ADMIN_TRANSITIONS, REASON_MAX, REASON_MIN, transitionError } from '../utils/reservations';
 
 const NO_PERMISSION = 'No tienes permisos para esta acción';
@@ -12,6 +13,78 @@ function requireAdmin(db) {
   if (!user || user.role !== 'admin') throw new Error(NO_PERMISSION);
   return user;
 }
+
+const ROOM_STATUSES = ['disponible', 'ocupada', 'mantenimiento'];
+const FLOOR_SIZE = 10;
+
+// Número y piso libres: se llena el primer piso con hueco (101..110, 201..210…)
+function nextFreeRoom(rooms) {
+  const taken = new Set(rooms.map((r) => r.number));
+  for (let floor = 1; ; floor++) {
+    for (let i = 1; i <= FLOOR_SIZE; i++) {
+      const number = String(floor * 100 + i);
+      if (!taken.has(number)) return { number, floor };
+    }
+  }
+}
+
+// Habitaciones físicas de un tipo = su `units`. En la v1 el estado de la habitación física es
+// informativo: no cambia la disponibilidad de reservas, que sigue calculándose con `units`.
+// Valida antes de mutar: al reducir solo se quitan habitaciones 'disponible'.
+function syncRooms(db, roomType) {
+  const own = db.rooms.filter((r) => r.room_type_id === roomType.id);
+  const diff = roomType.units - own.length;
+  if (diff < 0) {
+    const removable = own.filter((r) => r.status === 'disponible').sort((a, b) => b.number.localeCompare(a.number));
+    if (removable.length < -diff) {
+      const n = -diff;
+      const k = removable.length;
+      throw new Error(`No se pueden quitar ${n} ${n === 1 ? 'habitación' : 'habitaciones'}: solo ${k} ${k === 1 ? 'está disponible' : 'están disponibles'} (libera las ocupadas o en mantenimiento primero)`);
+    }
+    const drop = new Set(removable.slice(0, -diff).map((r) => r.id));
+    db.rooms = db.rooms.filter((r) => !drop.has(r.id));
+  }
+  for (let i = 0; i < diff; i++) {
+    const { number, floor } = nextFreeRoom(db.rooms);
+    db.rooms.push({ id: `room_${number}`, number, floor, room_type_id: roomType.id, status: 'disponible' });
+  }
+}
+
+// Solo campos permitidos, ya normalizados; en paquetes el precio es `price` (total), no por noche
+function cleanRoomType(data, db) {
+  const errors = validateRoomType(data);
+  const [firstError] = Object.values(errors);
+  if (firstError) throw new Error(firstError);
+  const isPackage = data.category === 'paquete';
+  const text = (v) => String(v ?? '').trim();
+  const clean = {
+    name: text(data.name),
+    description: text(data.description),
+    category: data.category,
+    old_price: data.old_price === '' || data.old_price == null ? null : Number(data.old_price),
+    capacity: Number(data.capacity),
+    units: Number(data.units),
+    size_m2: Number(data.size_m2),
+    beds: text(data.beds),
+    amenities: [...new Set(data.amenities ?? [])],
+    images: data.images.map(text),
+    tag: text(data.tag) || null,
+  };
+  if (isPackage) {
+    clean.price = Number(data.price);
+    clean.nights = Number(data.nights);
+    clean.includes = data.includes.map(text).filter(Boolean);
+    clean.room_type_id = data.room_type_id || null;
+    if (clean.room_type_id && !db.roomTypes.some((r) => r.id === clean.room_type_id && r.category !== 'paquete')) {
+      throw new Error('La habitación base del paquete no existe');
+    }
+  } else {
+    clean.price_per_night = Number(data.price_per_night);
+  }
+  return clean;
+}
+
+const PACKAGE_ONLY = ['price', 'nights', 'includes', 'room_type_id'];
 
 function withNames(db, res) {
   const rt = db.roomTypes.find((r) => r.id === res.room_type_id);
@@ -100,6 +173,74 @@ export const adminService = {
   async checkOut(id) {
     await delay();
     return transition(id, 'checkOut');
+  },
+
+  // Incluye inactivos (borrado lógico); sin `category` devuelve todos
+  async listRoomTypes({ category } = {}) {
+    await delay();
+    const db = loadDb();
+    requireAdmin(db);
+    return db.roomTypes.filter((r) => !category || r.category === category);
+  },
+
+  async createRoomType(data) {
+    await delay();
+    const db = loadDb();
+    requireAdmin(db);
+    const record = { id: newId('rt'), ...cleanRoomType(data, db), is_active: true, bookings_count: 0 };
+    syncRooms(db, record);
+    db.roomTypes.push(record);
+    saveDb(db);
+    return record;
+  },
+
+  async updateRoomType(id, data) {
+    await delay();
+    const db = loadDb();
+    requireAdmin(db);
+    const current = db.roomTypes.find((r) => r.id === id);
+    if (!current) throw new Error('Habitación no encontrada');
+    const next = { ...current, ...cleanRoomType(data, db) };
+    if (next.category !== 'paquete') PACKAGE_ONLY.forEach((k) => delete next[k]);
+    else delete next.price_per_night;
+    syncRooms(db, next);
+    Object.keys(current).forEach((k) => delete current[k]);
+    Object.assign(current, next);
+    saveDb(db);
+    return current;
+  },
+
+  // Borrado lógico: nunca se elimina el registro (las reservas lo siguen referenciando)
+  async setRoomTypeActive(id, active) {
+    await delay();
+    const db = loadDb();
+    requireAdmin(db);
+    const current = db.roomTypes.find((r) => r.id === id);
+    if (!current) throw new Error('Habitación no encontrada');
+    current.is_active = Boolean(active);
+    saveDb(db);
+    return current;
+  },
+
+  async listRooms() {
+    await delay();
+    const db = loadDb();
+    requireAdmin(db);
+    return db.rooms
+      .map((r) => ({ ...r, room_type_name: db.roomTypes.find((t) => t.id === r.room_type_id)?.name ?? 'Tipo eliminado' }))
+      .sort((a, b) => a.number.localeCompare(b.number));
+  },
+
+  async setRoomStatus(id, status) {
+    await delay();
+    const db = loadDb();
+    requireAdmin(db);
+    if (!ROOM_STATUSES.includes(status)) throw new Error('Estado de habitación no válido');
+    const room = db.rooms.find((r) => r.id === id);
+    if (!room) throw new Error('Habitación no encontrada');
+    room.status = status;
+    saveDb(db);
+    return { ...room, room_type_name: db.roomTypes.find((t) => t.id === room.room_type_id)?.name ?? '' };
   },
 
   // Heredado: S12 lo rehace
