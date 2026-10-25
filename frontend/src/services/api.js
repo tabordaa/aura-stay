@@ -38,11 +38,12 @@ export function getErrorMessage(detail, fallback = 'Error en la petición') {
 // Wrapper de fetch: inyecta el Bearer Token, traduce errores y avisa cuando la sesión expiró.
 // Los errores llevan `status` con el código HTTP para que cada pantalla decida qué mostrar.
 export async function fetchWithAuth(endpoint, options = {}) {
-  const token = localStorage.getItem('token');
+  // Base de la v2: la app no guarda tokens; quien llame puede pasarlo en `options.token`
+  const { token, ...fetchOptions } = options;
 
   const headers = {
     'Content-Type': 'application/json',
-    ...options.headers,
+    ...fetchOptions.headers,
   };
 
   if (token) {
@@ -50,7 +51,7 @@ export async function fetchWithAuth(endpoint, options = {}) {
   }
 
   const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
+    ...fetchOptions,
     headers,
   });
 
@@ -59,7 +60,6 @@ export async function fetchWithAuth(endpoint, options = {}) {
 
   if (!response.ok) {
     if (response.status === 401 && token) {
-      localStorage.removeItem('token');
       window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
     }
     const error = new Error(getErrorMessage(data?.detail));

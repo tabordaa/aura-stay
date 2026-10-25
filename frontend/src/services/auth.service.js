@@ -1,52 +1,120 @@
-import { API_URL, fetchWithAuth, getErrorMessage } from './api';
+import { delay, loadDb, saveDb, newId } from './mockApi';
+import { validateProfile } from '../utils/validation';
+
+const SESSION_KEY = 'aura_stay_session';
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Nunca se expone el password fuera del servicio
+function publicUser(user) {
+  if (!user) return null;
+  const { password: _password, ...rest } = user; // eslint-disable-line no-unused-vars
+  return rest;
+}
+
+// La sesión guarda solo el id del usuario
+function readSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed.userId === 'string' ? parsed.userId : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSession(userId) {
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ userId }));
+  } catch {
+    // Sin almacenamiento la sesión no se podrá restaurar al recargar
+  }
+}
+
+// Id del usuario en sesión (otros servicios lo usan para no duplicar la clave)
+export function getSessionUserId() {
+  return readSession();
+}
+
+function clearSession() {
+  try {
+    localStorage.removeItem(SESSION_KEY);
+  } catch {
+    // Nada que limpiar si el almacenamiento está bloqueado
+  }
+}
 
 export const authService = {
   async login(email, password) {
-    // FastAPI OAuth2 espera x-www-form-urlencoded
-    const formData = new URLSearchParams();
-    formData.append('username', email);
-    formData.append('password', password);
+    await delay();
+    const normalized = String(email ?? '').trim().toLowerCase();
+    const user = loadDb().users.find((u) => u.email.toLowerCase() === normalized);
+    if (!user || user.password !== password) throw new Error('Correo o contraseña incorrectos');
+    writeSession(user.id);
+    return publicUser(user);
+  },
 
-    const response = await fetch(`${API_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData.toString()
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(getErrorMessage(errorData.detail, 'Error al iniciar sesión'));
+  async register({ name, email, phone, password, city }) {
+    await delay();
+    const cleanName = String(name ?? '').trim();
+    const cleanEmail = String(email ?? '').trim().toLowerCase();
+    if (cleanName.length < 3 || cleanName.length > 100) throw new Error('El nombre debe tener entre 3 y 100 caracteres');
+    if (!EMAIL_RE.test(cleanEmail)) throw new Error('El correo electrónico no es válido');
+    if (!password || password.length < 8 || password.length > 72) {
+      throw new Error('La contraseña debe tener entre 8 y 72 caracteres');
     }
-
-    return response.json(); // { access_token, token_type }
+    const db = loadDb();
+    if (db.users.some((u) => u.email.toLowerCase() === cleanEmail)) {
+      throw new Error('Ya existe una cuenta con ese correo');
+    }
+    const user = {
+      id: newId('u'),
+      name: cleanName,
+      email: cleanEmail,
+      password,
+      role: 'huesped', // el rol nunca viene del formulario
+      phone: String(phone ?? '').trim(),
+      document: '',
+      city: String(city ?? '').trim(),
+    };
+    db.users.push(user);
+    saveDb(db);
+    return publicUser(user);
   },
 
-  async register(userData) {
-    return fetchWithAuth('/api/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
+  // Usuario de la sesión, o null si no hay sesión o el usuario ya no existe
+  async me() {
+    await delay();
+    const userId = readSession();
+    if (!userId) return null;
+    const user = loadDb().users.find((u) => u.id === userId);
+    if (!user) {
+      clearSession();
+      return null;
+    }
+    return publicUser(user);
   },
 
-  // Intercambia el ID token de Google por la sesión de Aura Food (crea la cuenta de cliente si no existe)
-  async loginWithGoogle(credential) {
-    return fetchWithAuth('/api/auth/google', {
-      method: 'POST',
-      body: JSON.stringify({ credential }),
-    });
+  async updateMe(fields = {}) {
+    await delay();
+    const userId = readSession();
+    const db = loadDb();
+    const user = db.users.find((u) => u.id === userId);
+    if (!user) throw new Error('Tu sesión expiró. Inicia sesión de nuevo');
+    // Solo se pueden editar estos campos; email, rol, password e id se ignoran
+    const allowed = {};
+    for (const key of ['name', 'phone', 'document', 'city']) {
+      if (key in fields) allowed[key] = String(fields[key] ?? '').trim();
+    }
+    const [firstError] = Object.values(validateProfile(allowed));
+    if (firstError) throw new Error(firstError);
+    Object.assign(user, allowed);
+    saveDb(db);
+    return publicUser(user);
   },
 
-  async getMe() {
-    return fetchWithAuth('/api/auth/me');
-  },
-
-  // Nombre, dirección y teléfono (el correo y el rol no se pueden cambiar)
-  async updateMe(changes) {
-    return fetchWithAuth('/api/auth/me', {
-      method: 'PATCH',
-      body: JSON.stringify(changes),
-    });
+  async logout() {
+    // Se limpia primero: si el usuario recarga durante la latencia simulada no debe seguir logueado
+    clearSession();
+    await delay();
   },
 };

@@ -67,6 +67,8 @@
 }
 .panel h3 { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
 
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.input[readonly] { background: var(--primary-light); color: var(--text-secondary); cursor: default; }
 .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .label { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
 .label em { font-style: normal; font-weight: 400; color: var(--text-muted); }
@@ -146,6 +148,7 @@
 
 @media (max-width: 640px) {
   .identity { flex-wrap: wrap; }
+  .field-row { grid-template-columns: 1fr; }
   .btn-logout { width: 100%; }
   .actions { flex-direction: column-reverse; }
 }

@@ -111,7 +111,7 @@ export default function AdminProducts() {
 
   return (
     <AdminLayout
-      active="products"
+      active="rooms"
       search={search}
       onSearch={setSearch}
       searchPlaceholder="Buscar producto por nombre, categoría o etiqueta…"

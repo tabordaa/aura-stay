@@ -1,5 +1,5 @@
 /* =========================================
-   ORDERS (Mis pedidos + seguimiento)
+   RESERVAS (Mis reservas + detalle)
    ========================================= */
 .page {
   min-height: 100vh;
@@ -83,10 +83,10 @@
 .btn-secondary { background: #fff; color: var(--primary); border: 1.5px solid var(--primary); }
 .btn-secondary:hover { background: var(--primary-light); }
 /* Acciones destructivas: mismos colores que Rechazar en el panel admin */
-.btn-cancel { background: #fff; color: #b3261e; border: 1.5px solid #f2b8b5; }
-.btn-cancel:hover { background: #fff0f0; border-color: #d93025; }
-.btn-danger { background: #d93025; color: #fff; }
-.btn-danger:hover:not(:disabled) { background: #b3261e; }
+.btn-cancel { background: #fff; color: var(--error); border: 1.5px solid var(--error-border); }
+.btn-cancel:hover { background: var(--error-bg); border-color: var(--error-strong); }
+.btn-danger { background: var(--error-strong); color: #fff; }
+.btn-danger:hover:not(:disabled) { background: var(--error); }
 .btn-danger:disabled, .btn-secondary:disabled { opacity: 0.6; cursor: progress; }
 
 /* Loading / empty / not found */
@@ -151,11 +151,10 @@
   animation: pulse 2s infinite;
 }
 .hero.delivered .hero-icon { animation: none; }
-/* Pedido rechazado o cancelado: mismo tono neutro que el estado "Rechazado" del panel admin */
+/* Reserva rechazada o cancelada: mismo tono neutro que el estado "Rechazado" del panel admin */
 .hero.closed { background: linear-gradient(120deg, #F1F4F1 0%, #E4E9E4 100%); }
 .hero.closed .hero-icon { animation: none; }
 .hero.closed .hero-status h1 { color: #4F5B4F; }
-.hero.closed .live { color: #6b776b; }
 .hero-status h1 {
   font-size: 1.9rem;
   font-weight: 800;
@@ -163,25 +162,6 @@
   line-height: 1.1;
 }
 .hero-status p { font-size: 0.92rem; color: var(--text-secondary); margin-top: 3px; }
-
-.live {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: #fff;
-  color: var(--primary);
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 5px 12px;
-  border-radius: var(--radius-xl);
-}
-.live-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: #2ecc71;
-  animation: pulse 1.6s infinite;
-}
-.hero-error { margin-top: 8px; font-size: 0.8rem; color: #b3261e; }
 
 .eta {
   background: #fff;
@@ -312,7 +292,6 @@
 .item-emoji img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .item-name { flex: 1; min-width: 0; color: var(--text-primary); }
 .item-name em { font-style: normal; color: var(--text-muted); }
-.item-price { font-weight: 700; color: var(--text-primary); }
 
 .row {
   display: flex;
@@ -362,20 +341,9 @@
   margin-top: 6px;
 }
 
-.confirm {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-  margin-top: 6px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #b3261e;
-}
-.action-error { text-align: center; color: #b3261e; font-size: 0.85rem; font-weight: 600; }
+.action-error { text-align: center; color: var(--error); font-size: 0.85rem; font-weight: 600; }
 
-/* Mis pedidos */
+/* Mis reservas */
 .list-head h1 { font-size: 1.6rem; font-weight: 800; color: var(--text-primary); }
 .list-head p { font-size: 0.9rem; color: var(--text-muted); margin-top: 2px; }
 
@@ -396,52 +364,102 @@
   box-shadow: 0 6px 20px rgba(27, 94, 53, 0.1);
   transform: translateY(-1px);
 }
-.order-emojis {
-  font-size: 1.3rem;
-  background: var(--primary-light);
-  border-radius: var(--radius-sm);
-  padding: 8px 10px;
-  min-width: 64px;
-  text-align: center;
-  letter-spacing: -0.1em;
-}
 .order-thumbs {
   display: flex;
-  align-items: center;
-  background: var(--primary-light);
-  border-radius: var(--radius-sm);
-  padding: 8px 10px;
-  /* Ancho fijo (hasta 3 miniaturas) para que todas las filas queden alineadas */
   width: 88px;
+  height: 60px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-light);
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
-.order-thumbs > * {
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  border: 2px solid #fff;
-  background: #fff;
-  object-fit: cover;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.85rem;
-  flex-shrink: 0;
-}
-.order-thumbs > * + * { margin-left: -8px; }
+.order-thumbs img { width: 100%; height: 100%; object-fit: cover; }
 .order-info { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .order-info strong { font-size: 0.95rem; color: var(--text-primary); }
 .order-info small { font-size: 0.78rem; color: var(--text-muted); }
-.status {
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 5px 12px;
-  border-radius: var(--radius-xl);
-  background: #FFF3CD;
-  color: #856404;
-  white-space: nowrap;
-}
-.status-done { background: var(--primary-light); color: var(--primary); }
-.status-closed { background: #eef1ee; color: #6b776b; }
 .order-total { font-weight: 800; color: var(--primary); min-width: 80px; text-align: right; }
 .order-arrow { color: var(--text-muted); font-weight: 700; }
+
+/* Pestañas (mismo patrón .tab-btn del catálogo) */
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.tab-btn {
+  white-space: nowrap;
+  padding: 7px 16px;
+  border-radius: var(--radius-xl);
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  color: var(--text-secondary);
+  transition: all var(--transition);
+}
+.tab-btn:hover { border-color: var(--primary-mid); color: var(--primary); }
+.tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.item-photo { width: 64px; height: 48px; }
+.row em { font-style: normal; color: var(--text-muted); }
+.muted { color: var(--text-muted); font-size: 0.8rem !important; }
+.hint { text-align: center; color: var(--text-muted); font-size: 0.85rem; }
+.notice {
+  background: #eef1ee;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  font-size: 0.9rem;
+  color: #4F5B4F;
+}
+
+/* Modal de confirmación */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 30, 18, 0.45);
+  backdrop-filter: blur(3px);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.modal {
+  width: 420px;
+  max-width: 100%;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeUp 0.25s ease;
+}
+.modal h2 { font-size: 1.2rem; font-weight: 800; color: var(--text-primary); }
+.modal p { font-size: 0.9rem; color: var(--text-secondary); }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 6px; }
+.btn-primary:focus-visible, .btn-secondary:focus-visible, .btn-cancel:focus-visible,
+.btn-danger:focus-visible, .tab-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Toast (mismo patrón del panel admin) */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  border-radius: var(--radius-xl);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--primary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  z-index: 400;
+  max-width: calc(100vw - 32px);
+}
 
 /* Mobile */
 @media (max-width: 720px) {
@@ -455,6 +473,7 @@
   .order-info { flex-basis: calc(100% - 90px); }
   .order-arrow { display: none; }
   .actions { flex-direction: column; }
+  .modal-actions > * { flex: 1; }
 }
 
 /* Barra superior en celulares: tres enlaces deben caber sin partirse */

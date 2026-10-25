@@ -1,10 +1,25 @@
-// Categorías del catálogo; deben coincidir con ProductCategory en backend/app/schemas.py
+// Categorías del catálogo de hospedaje
 export const CATEGORIES = [
-  { id: 'frutas',   label: 'Frutas y Verduras', icon: '🥦' },
-  { id: 'dairy',    label: 'Lácteos',            icon: '🥛' },
-  { id: 'meat',     label: 'Carnes',             icon: '🥩' },
-  { id: 'cleaning', label: 'Aseo del Hogar',     icon: '🧴' },
-  { id: 'bakery',   label: 'Panadería',          icon: '🥐' },
+  { id: 'habitacion', label: 'Habitaciones', icon: '🛏️' },
+  { id: 'suite',      label: 'Suites',       icon: '🛎️' },
+  { id: 'exclusiva',  label: 'Exclusivas',   icon: '💎' },
+  { id: 'paquete',    label: 'Paquetes',     icon: '🎁' },
 ];
 
 export const categoryLabel = (id) => CATEGORIES.find(c => c.id === id)?.label ?? id;
+
+// Etiquetas cortas de las comodidades (claves de `amenities` en los mocks)
+export const AMENITIES = {
+  wifi: '📶 Wifi',
+  breakfast: '🥐 Desayuno',
+  jacuzzi: '🛁 Jacuzzi',
+  view: '🌄 Vista',
+  balcony: 'Balcón',
+  minibar: 'Minibar',
+  ac: '❄️ A/C',
+  parking: '🚗 Parqueadero',
+  spa: '💆 Spa',
+  tv: '📺 TV',
+};
+
+export const amenityLabel = (key) => AMENITIES[key] ?? key;

@@ -57,7 +57,7 @@ export default function AdminClients() {
 
   return (
     <AdminLayout
-      active="clients"
+      active="guests"
       search={search}
       onSearch={setSearch}
       searchPlaceholder="Buscar cliente por nombre, correo, teléfono o dirección…"

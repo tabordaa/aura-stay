@@ -1,0 +1,8 @@
+/* Pantalla de carga mientras se restaura la sesión (el spinner viene de Orders.module.css) */
+.loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, var(--bg-gradient-start), var(--bg-gradient-end));
+}

@@ -11,8 +11,7 @@ export default function ProtectedRoute({ children, allowedRoles }) {
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     // Si no tiene el rol, mandarlo a su página por defecto
     if (user.role === 'admin') return <Navigate to="/admin" replace />;
-    if (user.role === 'domiciliario') return <Navigate to="/delivery" replace />;
-    return <Navigate to="/catalog" replace />;
+    return <Navigate to="/habitaciones" replace />;
   }
 
   return children;

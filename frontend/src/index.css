@@ -34,6 +34,10 @@
   --radius-xl:  32px;
 
   --transition: 0.2s ease;
+  --error: #b3261e;
+  --error-strong: #d93025;
+  --error-bg: #fde8e7;
+  --error-border: #f2b8b5;
 }
 
 /* =========================================

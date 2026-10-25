@@ -1,27 +1,23 @@
-import { fetchWithAuth } from './api';
+import { delay } from './mockApi';
+
+// El catálogo ya usa rooms.service; este servicio queda solo para AdminProducts hasta S11 (admin de habitaciones).
+const unavailable = async () => {
+  await delay();
+  throw new Error('Esta acción aún no está disponible');
+};
 
 export const productService = {
-  // Catálogo público (solo productos activos)
-  // sort = 'best_sellers' entrega primero los más vendidos (cada producto trae units_sold)
-  async getAllProducts(sort) {
-    return fetchWithAuth(sort ? `/api/products?sort=${sort}` : '/api/products');
+  async getAllProducts() {
+    await delay();
+    return [];
   },
 
-  // Panel admin: incluye los desactivados
   async getManagedProducts() {
-    return fetchWithAuth('/api/products/manage');
+    await delay();
+    return [];
   },
 
-  async createProduct(product) {
-    return fetchWithAuth('/api/products', { method: 'POST', body: JSON.stringify(product) });
-  },
-
-  async updateProduct(id, product) {
-    return fetchWithAuth(`/api/products/${id}`, { method: 'PUT', body: JSON.stringify(product) });
-  },
-
-  // Borrado lógico: el producto sale del catálogo pero se conserva en los pedidos históricos
-  async deactivateProduct(id) {
-    return fetchWithAuth(`/api/products/${id}`, { method: 'DELETE' });
-  },
+  createProduct: unavailable,
+  updateProduct: unavailable,
+  deactivateProduct: unavailable,
 };
