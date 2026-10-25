@@ -1,10 +1,9 @@
-// Categorías del catálogo; deben coincidir con ProductCategory en backend/app/schemas.py
+// Categorías del catálogo de hospedaje (se conectan al catálogo real en S03)
 export const CATEGORIES = [
-  { id: 'frutas',   label: 'Frutas y Verduras', icon: '🥦' },
-  { id: 'dairy',    label: 'Lácteos',            icon: '🥛' },
-  { id: 'meat',     label: 'Carnes',             icon: '🥩' },
-  { id: 'cleaning', label: 'Aseo del Hogar',     icon: '🧴' },
-  { id: 'bakery',   label: 'Panadería',          icon: '🥐' },
+  { id: 'habitacion', label: 'Habitaciones', icon: '🛏️' },
+  { id: 'suite',      label: 'Suites',       icon: '🛎️' },
+  { id: 'exclusiva',  label: 'Exclusivas',   icon: '💎' },
+  { id: 'paquete',    label: 'Paquetes',     icon: '🎁' },
 ];
 
 export const categoryLabel = (id) => CATEGORIES.find(c => c.id === id)?.label ?? id;

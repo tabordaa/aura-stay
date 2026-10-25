@@ -12,7 +12,7 @@ export default function ActiveOrderBanner({ orderId }) {
   const step = ORDER_STEPS[current];
 
   return (
-    <Link to={`/pedidos/${order.id}`} className={styles['order-banner']}>
+    <Link to={`/reservas/${order.id}`} className={styles['order-banner']}>
       <span className={styles['order-banner-icon']}>{step.icon}</span>
       <div className={styles['order-banner-text']}>
         <strong>Tu pedido {formatOrderId(order.id)} • {step.label}</strong>

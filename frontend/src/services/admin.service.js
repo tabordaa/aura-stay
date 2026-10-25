@@ -1,14 +1,14 @@
-import { fetchWithAuth } from './api';
+import { delay } from './mockApi';
 
-// Solo admin
+// Solo admin. Los indicadores reales llegan en S10.
 export const adminService = {
-  // Indicadores del panel calculados en el servidor
   async getStats() {
-    return fetchWithAuth('/api/admin/stats');
+    await delay();
+    return null;
   },
 
-  // Clientes con número de pedidos, total gastado y último pedido
   async getClients() {
-    return fetchWithAuth('/api/admin/clients');
+    await delay();
+    return [];
   },
 };

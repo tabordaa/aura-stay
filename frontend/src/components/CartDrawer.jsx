@@ -83,7 +83,7 @@ export default function CartDrawer({
               <span>{formatPrice(cartSubtotal)}</span>
             </div>
             <div className={styles['cart-summary-row']}>
-              <span>Costo de domicilio</span>
+              <span>Costo de servicio</span>
               <span>{deliveryCost == null ? 'Calculando…' : formatPrice(deliveryCost)}</span>
             </div>
             <div className={styles['cart-summary-divider']} />

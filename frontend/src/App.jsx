@@ -10,7 +10,6 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminClients from './pages/admin/AdminClients';
 import ProfilePage from './pages/profile/ProfilePage';
 import AdminProducts from './pages/admin/AdminProducts';
-import DeliveryPage from './pages/delivery/DeliveryPage';
 
 export default function App() {
   return (
@@ -21,15 +20,14 @@ export default function App() {
           <Route path="/login"    element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           
-          <Route path="/catalog"  element={<ProtectedRoute allowedRoles={['cliente']}><CatalogPage /></ProtectedRoute>} />
-          <Route path="/pedidos"  element={<ProtectedRoute allowedRoles={['cliente']}><MyOrdersPage /></ProtectedRoute>} />
-          <Route path="/pedidos/:id" element={<ProtectedRoute allowedRoles={['cliente']}><OrderTrackingPage /></ProtectedRoute>} />
-          <Route path="/perfil"   element={<ProtectedRoute allowedRoles={['cliente']}><ProfilePage /></ProtectedRoute>} />
+          <Route path="/habitaciones"  element={<ProtectedRoute allowedRoles={['huesped']}><CatalogPage /></ProtectedRoute>} />
+          <Route path="/reservas"  element={<ProtectedRoute allowedRoles={['huesped']}><MyOrdersPage /></ProtectedRoute>} />
+          <Route path="/reservas/:id" element={<ProtectedRoute allowedRoles={['huesped']}><OrderTrackingPage /></ProtectedRoute>} />
+          <Route path="/perfil"   element={<ProtectedRoute allowedRoles={['huesped']}><ProfilePage /></ProtectedRoute>} />
 
           <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/admin/productos" element={<ProtectedRoute allowedRoles={['admin']}><AdminProducts /></ProtectedRoute>} />
-          <Route path="/admin/clientes" element={<ProtectedRoute allowedRoles={['admin']}><AdminClients /></ProtectedRoute>} />
-          <Route path="/delivery" element={<ProtectedRoute allowedRoles={['domiciliario']}><DeliveryPage /></ProtectedRoute>} />
+          <Route path="/admin/habitaciones" element={<ProtectedRoute allowedRoles={['admin']}><AdminProducts /></ProtectedRoute>} />
+          <Route path="/admin/huespedes" element={<ProtectedRoute allowedRoles={['admin']}><AdminClients /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

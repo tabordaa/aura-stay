@@ -1,14 +1,11 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { IconMapPin, IconPhone, IconCheck } from '../../components/Icons';
-import { OrderMap } from '../../components/maps/LazyMaps';
 import useOrderStatus from '../../hooks/useOrderStatus';
-import { useStoreConfig } from '../../hooks/useStoreConfig';
 import { orderService } from '../../services/order.service';
 import {
   CLOSED_STATUSES, ORDER_STEPS, DELIVERY_MINUTES, PAYMENT_LABELS, stepIndex, formatPrice, formatOrderId, parseServerDate,
 } from '../../utils/orders';
-import { toLocation } from '../../utils/location';
 import OrdersTopbar from './OrdersTopbar';
 import styles from './Orders.module.css';
 
@@ -25,7 +22,6 @@ export default function OrderTrackingPage() {
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [actionError, setActionError] = useState('');
-  const store = useStoreConfig()?.store;
 
   async function cancelOrder() {
     setCancelling(true);
@@ -49,7 +45,7 @@ export default function OrderTrackingPage() {
         <span className={styles['state-icon']}>🔎</span>
         <h2>No encontramos el pedido {formatOrderId(id)}</h2>
         <p>Revisa el número o mira la lista de tus pedidos.</p>
-        <Link to="/pedidos" className={styles['btn-primary']}>Ver mis pedidos</Link>
+        <Link to="/reservas" className={styles['btn-primary']}>Ver mis pedidos</Link>
       </div>
     );
   } else if (!order) {
@@ -124,14 +120,6 @@ export default function OrderTrackingPage() {
           </section>
         )}
 
-        {/* Mapa: solo si el cliente marcó el punto de entrega y el pedido sigue activo */}
-        {toLocation(order) && !finished && (
-          <section className={styles.panel}>
-            <h3>{order.status === 'asignado' ? 'Tu pedido va en camino a este punto' : 'Punto de entrega'}</h3>
-            <OrderMap store={store} destination={toLocation(order)} />
-          </section>
-        )}
-
         <div className={styles.grid}>
           {/* Productos */}
           <section className={styles.panel}>
@@ -148,7 +136,7 @@ export default function OrderTrackingPage() {
             {deliveryFee > 0 && (
               <>
                 <div className={styles.row}><span>Subtotal</span><span>{formatPrice(subtotal)}</span></div>
-                <div className={styles.row}><span>Domicilio</span><span>{formatPrice(deliveryFee)}</span></div>
+                <div className={styles.row}><span>Servicio</span><span>{formatPrice(deliveryFee)}</span></div>
               </>
             )}
             <div className={[styles.row, styles['row-total']].join(' ')}><span>Total</span><span>{formatPrice(order.total_price)}</span></div>
@@ -159,7 +147,7 @@ export default function OrderTrackingPage() {
             <h3>Entrega</h3>
             <div className={styles.detail}>
               <span className={styles['detail-icon']}><IconMapPin size={16} /></span>
-              <div><small>Dirección</small><p>{order.delivery_address}</p></div>
+              <div><small>Dirección</small><p>{order.address}</p></div>
             </div>
             {order.phone && (
               <div className={styles.detail}>
@@ -171,12 +159,6 @@ export default function OrderTrackingPage() {
               <div className={styles.detail}>
                 <span className={styles['detail-icon']}>💳</span>
                 <div><small>Pago</small><p>{PAYMENT_LABELS[order.payment_method] || order.payment_method}</p></div>
-              </div>
-            )}
-            {order.courier && (
-              <div className={styles.detail}>
-                <span className={styles['detail-icon']}>🛵</span>
-                <div><small>Domiciliario</small><p>{order.courier.name}</p></div>
               </div>
             )}
             {order.notes && (
@@ -200,8 +182,8 @@ export default function OrderTrackingPage() {
           </div>
         ) : (
           <div className={styles.actions}>
-            <Link to="/catalog" className={styles['btn-primary']}>Seguir comprando</Link>
-            <Link to="/pedidos" className={styles['btn-secondary']}>Ver todos mis pedidos</Link>
+            <Link to="/habitaciones" className={styles['btn-primary']}>Seguir comprando</Link>
+            <Link to="/reservas" className={styles['btn-secondary']}>Ver todos mis pedidos</Link>
             {order.status === 'pendiente' && (
               <button type="button" className={styles['btn-cancel']} onClick={() => setConfirmCancel(true)}>
                 Cancelar pedido

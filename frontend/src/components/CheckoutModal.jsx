@@ -5,8 +5,6 @@ import PaymentCardForm from './PaymentCardForm';
 import { BRAND_LABELS, detectBrand, onlyDigits, validateCard } from './cardUtils';
 import { formatOrderId, formatPrice } from '../utils/format';
 import { useAuth } from '../hooks/useAuth';
-import { useStoreConfig } from '../hooks/useStoreConfig';
-import { LocationPicker } from './maps/LazyMaps';
 import { orderService } from '../services/order.service';
 import styles from './CheckoutModal.module.css';
 
@@ -55,10 +53,6 @@ export default function CheckoutModal({
     phone: onlyDigits(user?.phone ?? '').slice(0, 10),
   }));
   const [saveToProfile, setSaveToProfile] = useState(true);
-  const [showMap, setShowMap] = useState(false);
-  const [location, setLocation] = useState(null);
-  // El mapa arranca centrado en la tienda (o en Bogotá mientras llega la configuración)
-  const mapCenter = useStoreConfig()?.store ?? { lat: 4.6486, lng: -74.0628 };
   const [payment, setPayment] = useState('card');
   const [card, setCard] = useState(EMPTY_CARD);
   const [cashWith, setCashWith] = useState('exact');
@@ -126,12 +120,11 @@ export default function CheckoutModal({
       setStage('sending');
 
       const resData = await orderService.createOrder({
-        delivery_address: address,
+        address: address,
         phone: delivery.phone,
         notes: delivery.notes.trim(),
         payment_method: payment,
         items: cart.map(item => ({ product_id: item.id, quantity: item.qty })),
-        ...(location ? { delivery_lat: location.lat, delivery_lng: location.lng } : {}),
       });
 
       const brand = detectBrand(card.number);
@@ -148,7 +141,7 @@ export default function CheckoutModal({
         total: resData.total_price,
         paymentLabel: payment === 'card'
           ? `${BRAND_LABELS[brand]} •••• ${card.number.slice(-4)}`
-          : 'Efectivo al recibir',
+          : 'Pagar en el hotel',
         change: payment === 'cash' ? change : 0,
       };
       setReceipt(newReceipt);
@@ -179,7 +172,7 @@ export default function CheckoutModal({
 
         {/* Header */}
         <div className={styles.header}>
-          <span className={styles.brand}>🌿 Aura Food</span>
+          <span className={styles.brand}>🛏️ Aura Stay</span>
           <span className={styles['secure-badge']}><IconLock size={12} /> Pago seguro</span>
           <button className={styles['close-btn']} onClick={closeModal} disabled={busy} aria-label="Cerrar">✕</button>
         </div>
@@ -224,7 +217,7 @@ export default function CheckoutModal({
               ))}
               <div className={styles.divider} />
               <div className={styles['receipt-row']}><span>Subtotal</span><span>{formatPrice(receipt.subtotal)}</span></div>
-              <div className={styles['receipt-row']}><span>Domicilio</span><span>{formatPrice(receipt.deliveryCost)}</span></div>
+              <div className={styles['receipt-row']}><span>Servicio</span><span>{formatPrice(receipt.deliveryCost)}</span></div>
               <div className={[styles['receipt-row'], styles['receipt-total']].join(' ')}>
                 <span>Total</span><span>{formatPrice(receipt.total)}</span>
               </div>
@@ -244,7 +237,7 @@ export default function CheckoutModal({
               <button className={styles['btn-confirm']} onClick={() => { closeModal(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
                 Volver a la portada
               </button>
-              <button className={styles['btn-ghost']} onClick={() => { const id = receipt.id; closeModal(); navigate(`/pedidos/${id}`); }}>
+              <button className={styles['btn-ghost']} onClick={() => { const id = receipt.id; closeModal(); navigate(`/reservas/${id}`); }}>
                 Ver seguimiento del pedido <IconArrowRight size={15} />
               </button>
             </div>
@@ -327,14 +320,6 @@ export default function CheckoutModal({
                     />
                   </label>
 
-                  {showMap ? (
-                    <LocationPicker value={location} onChange={setLocation} center={mapCenter} disabled={busy} />
-                  ) : (
-                    <button type="button" className={styles['map-toggle']} onClick={() => setShowMap(true)} disabled={busy}>
-                      <IconMapPin size={14} /> Marcar el punto exacto en el mapa <em>(opcional, ayuda al domiciliario)</em>
-                    </button>
-                  )}
-
                   {differsFromProfile && (
                     <label className={styles['save-check']}>
                       <input type="checkbox" checked={saveToProfile} onChange={e => setSaveToProfile(e.target.checked)} disabled={busy} />
@@ -351,7 +336,7 @@ export default function CheckoutModal({
                   <div className={styles['pay-grid']}>
                     {[
                       { id: 'card', icon: '💳', title: 'Tarjeta crédito / débito', desc: 'Visa, Mastercard, Amex' },
-                      { id: 'cash', icon: '💵', title: 'Efectivo al recibir', desc: 'Pagas al repartidor' },
+                      { id: 'cash', icon: '💵', title: 'Pagar en el hotel', desc: 'Pagas al llegar' },
                     ].map(m => (
                       <button
                         key={m.id}
@@ -451,7 +436,7 @@ export default function CheckoutModal({
                 </div>
 
                 <div className={styles.row}><span>Subtotal</span><span>{formatPrice(cartSubtotal)}</span></div>
-                <div className={styles.row}><span>Domicilio</span><span>{deliveryCost == null ? 'Calculando…' : formatPrice(deliveryCost)}</span></div>
+                <div className={styles.row}><span>Servicio</span><span>{deliveryCost == null ? 'Calculando…' : formatPrice(deliveryCost)}</span></div>
                 <div className={styles.divider} />
                 <div className={styles['total-row']}>
                   <span>Total a pagar</span>

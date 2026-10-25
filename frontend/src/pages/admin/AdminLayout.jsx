@@ -4,9 +4,9 @@ import { IconSearch } from '../../components/Icons';
 import styles from './Admin.module.css';
 
 const NAV = [
-  { id: 'pedidos',  icon: '🧾', label: 'Pedidos',   path: '/admin' },
-  { id: 'products', icon: '🥑', label: 'Productos', path: '/admin/productos' },
-  { id: 'clients',  icon: '👥', label: 'Clientes',  path: '/admin/clientes' },
+  { id: 'pedidos',  icon: '🧾', label: 'Reservas', path: '/admin' },
+  { id: 'rooms',    icon: '🛏️', label: 'Habitaciones', path: '/admin/habitaciones' },
+  { id: 'guests',   icon: '👥', label: 'Huéspedes', path: '/admin/huespedes' },
   { id: 'settings', icon: '⚙️', label: 'Configuración' },
 ];
 
@@ -21,9 +21,9 @@ export default function AdminLayout({ active, pendingCount = 0, search, onSearch
       {/* Sidebar */}
       <aside className={styles.sidebar}>
         <div className={styles.brand}>
-          <span className={styles['brand-logo']}>🌿</span>
+          <span className={styles['brand-logo']}>🛏️</span>
           <div>
-            <strong>Aura Food</strong>
+            <strong>Aura Stay</strong>
             <span className={styles['brand-badge']}>Admin</span>
           </div>
         </div>
@@ -49,7 +49,7 @@ export default function AdminLayout({ active, pendingCount = 0, search, onSearch
           <span className={styles.avatar}>A</span>
           <div>
             <strong>{user?.name || 'Administrador'}</strong>
-            <small>Supermercado</small>
+            <small>Hotel</small>
           </div>
           <button type="button" className={styles.logout} onClick={logout} aria-label="Cerrar sesión" title="Cerrar sesión">⎋</button>
         </div>
