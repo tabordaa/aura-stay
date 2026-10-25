@@ -29,7 +29,12 @@ const SEARCH_DEBOUNCE_MS = 250;
 export default function CatalogPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [activeCategory, setActiveCategory] = useState('habitacion');
+  // La estadía vive en la URL (?in=&out=&guests=) y la pestaña inicial puede venir en ?cat=
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeCategory, setActiveCategory] = useState(() => {
+    const cat = searchParams.get('cat');
+    return CATEGORIES.some(c => c.id === cat) ? cat : 'habitacion';
+  });
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
@@ -44,8 +49,7 @@ export default function CatalogPage() {
   const [checkoutItems, setCheckoutItems] = useState(null);
   const [availability, setAvailability] = useState({ key: '', map: null });
 
-  // La estadía vive en la URL (?in=&out=&guests=); si es inválida no se aplica la disponibilidad
-  const [searchParams, setSearchParams] = useSearchParams();
+  // Si la estadía de la URL es inválida no se aplica la disponibilidad
   const rawStay = readStay(searchParams);
   const stay = activeStay(rawStay);
   const stayKey = stay ? `${stay.checkIn}|${stay.checkOut}|${stay.guests}` : '';
