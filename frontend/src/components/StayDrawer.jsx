@@ -19,7 +19,10 @@ export default function StayDrawer({ open, onClose, stay, notice, onReserve }) {
     const previous = document.activeElement;
     closeRef.current?.focus();
     recheck();
-    return () => previous?.focus?.();
+    // Si se cerró para abrir otro diálogo (checkout), no le robamos el foco
+    return () => {
+      if (!document.querySelector('[role="dialog"][aria-modal="true"]')) previous?.focus?.();
+    };
   }, [open, recheck]);
 
   // Cierra con Escape
