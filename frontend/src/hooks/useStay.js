@@ -82,20 +82,30 @@ export function useStay(userId) {
     return () => { active = false; };
   }, []);
 
-  // Resuelve los tipos de habitación que faltan; los que ya no existen se ocultan
+  // Resuelve los tipos de habitación que faltan; los que ya no existen o se desactivaron quedan marcados
   useEffect(() => {
     for (const id of new Set(entries.map(e => e.roomTypeId))) {
       if (requested.current.has(`room:${id}`)) continue;
       requested.current.add(`room:${id}`);
       roomsService.get(id)
-        .then(room => setRooms(r => ({ ...r, [id]: room })))
-        .catch(() => setMissing(m => [...m, id]));
+        .then(room => {
+          setRooms(r => ({ ...r, [id]: room }));
+          setMissing(m => m.filter(x => x !== id));
+        })
+        .catch(() => {
+          // Se quita de lo solicitado para reintentar en recheck() (puede reactivarse)
+          requested.current.delete(`room:${id}`);
+          setMissing(m => (m.includes(id) ? m : [...m, id]));
+        });
     }
-  }, [entries]);
+  }, [entries, availRun]);
 
-  const lines = useMemo(() => entries
-    .filter(e => rooms[e.roomTypeId] && !missing.includes(e.roomTypeId))
-    .map(e => ({ ...e, roomType: rooms[e.roomTypeId], error: lineError(e, rooms[e.roomTypeId]) })), [entries, rooms, missing]);
+  // Una línea cuyo tipo ya no existe o está inactivo se conserva (sin roomType) para avisar al huésped
+  const lines = useMemo(() => entries.flatMap(e => {
+    if (missing.includes(e.roomTypeId)) return [{ ...e, roomType: null, gone: true, error: 'Esta habitación ya no está disponible' }];
+    const room = rooms[e.roomTypeId];
+    return room ? [{ ...e, roomType: room, error: lineError(e, room) }] : [];
+  }), [entries, rooms, missing]);
 
   // Revalida disponibilidad de cada línea válida cuando cambian fechas o huéspedes
   useEffect(() => {
@@ -113,7 +123,7 @@ export function useStay(userId) {
     }
   }, [lines, availRun]);
 
-  // Limpia la caché de disponibilidad y vuelve a consultarla (p. ej. al abrir el drawer)
+  // Limpia la caché de disponibilidad y reintenta los tipos faltantes (`missing` se limpia solo si get() responde) (p. ej. al abrir el drawer)
   const recheck = useCallback(() => {
     for (const k of [...requested.current]) if (k.startsWith('av:')) requested.current.delete(k);
     setAvail({});

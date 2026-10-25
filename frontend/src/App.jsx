@@ -9,7 +9,7 @@ import ReservationDetailPage from './pages/reservations/ReservationDetailPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminClients from './pages/admin/AdminClients';
 import ProfilePage from './pages/profile/ProfilePage';
-import AdminProducts from './pages/admin/AdminProducts';
+import AdminRooms from './pages/admin/AdminRooms';
 import { useAuth } from './hooks/useAuth';
 
 // Hasta S13 no hay home pública: sin sesión va al login, con sesión a la home de su rol
@@ -34,7 +34,7 @@ export default function App() {
           <Route path="/perfil"   element={<ProtectedRoute allowedRoles={['huesped']}><ProfilePage /></ProtectedRoute>} />
 
           <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/admin/habitaciones" element={<ProtectedRoute allowedRoles={['admin']}><AdminProducts /></ProtectedRoute>} />
+          <Route path="/admin/habitaciones" element={<ProtectedRoute allowedRoles={['admin']}><AdminRooms /></ProtectedRoute>} />
           <Route path="/admin/huespedes" element={<ProtectedRoute allowedRoles={['admin']}><AdminClients /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
