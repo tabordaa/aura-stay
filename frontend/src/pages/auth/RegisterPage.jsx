@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
 import { IconBed, IconMail, IconLock, IconEye, IconEyeOff, IconUser, IconPhone, IconArrowRight, IconShield, IconMapPin } from '../../components/Icons';
+import { nameError } from '../../utils/validation';
 import styles from './Auth.module.css';
 
 function getStrength(p) {
@@ -35,6 +36,8 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const nameMsg = nameError(form.name);
+    if (nameMsg) { setError(nameMsg); return; }
     if (form.password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return; }
     if (form.password !== form.confirm) { setError('Las contraseñas no coinciden'); return; }
     if (!accepted) { setError('Debes aceptar los Términos y Condiciones'); return; }

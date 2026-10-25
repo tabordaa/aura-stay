@@ -1,4 +1,5 @@
 import { delay, loadDb, saveDb, newId } from './mockApi';
+import { validateProfile } from '../utils/validation';
 
 const SESSION_KEY = 'aura_stay_session';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -56,7 +57,7 @@ export const authService = {
     await delay();
     const cleanName = String(name ?? '').trim();
     const cleanEmail = String(email ?? '').trim().toLowerCase();
-    if (cleanName.length < 2 || cleanName.length > 100) throw new Error('El nombre debe tener entre 2 y 100 caracteres');
+    if (cleanName.length < 3 || cleanName.length > 100) throw new Error('El nombre debe tener entre 3 y 100 caracteres');
     if (!EMAIL_RE.test(cleanEmail)) throw new Error('El correo electrónico no es válido');
     if (!password || password.length < 8 || password.length > 72) {
       throw new Error('La contraseña debe tener entre 8 y 72 caracteres');
@@ -99,15 +100,14 @@ export const authService = {
     const db = loadDb();
     const user = db.users.find((u) => u.id === userId);
     if (!user) throw new Error('Tu sesión expiró. Inicia sesión de nuevo');
-    if ('name' in fields) {
-      const name = String(fields.name ?? '').trim();
-      if (name.length < 2 || name.length > 100) throw new Error('El nombre debe tener entre 2 y 100 caracteres');
-      user.name = name;
+    // Solo se pueden editar estos campos; email, rol, password e id se ignoran
+    const allowed = {};
+    for (const key of ['name', 'phone', 'document', 'city']) {
+      if (key in fields) allowed[key] = String(fields[key] ?? '').trim();
     }
-    // Solo se pueden editar estos campos; email y rol no
-    for (const key of ['phone', 'document', 'city']) {
-      if (key in fields) user[key] = String(fields[key] ?? '').trim();
-    }
+    const [firstError] = Object.values(validateProfile(allowed));
+    if (firstError) throw new Error(firstError);
+    Object.assign(user, allowed);
     saveDb(db);
     return publicUser(user);
   },
