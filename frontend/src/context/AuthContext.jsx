@@ -5,28 +5,26 @@ import { AuthContext } from './authContextObject';
 import { clearLegacyOrderStorage } from '../utils/orders';
 import { cartStorageKey } from '../hooks/useCart';
 import { useNavigate } from 'react-router';
+import styles from './AuthContext.module.css';
+import ordersStyles from '../pages/orders/Orders.module.css';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  // Solo hay algo que cargar si quedó un token guardado de una sesión anterior
-  const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('token')));
+  // La sesión se restaura leyendo me() al cargar la app
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Intentar recuperar el usuario si hay un token en localStorage
-    if (!localStorage.getItem('token')) return;
-    authService.getMe()
-      .then(userData => {
-        setUser(userData);
-      })
-      .catch(() => {
-        localStorage.removeItem('token');
-        setUser(null);
-      })
-      .finally(() => setLoading(false));
+    let active = true;
+    authService.me()
+      .then(userData => { if (active) setUser(userData); })
+      .catch(() => { if (active) setUser(null); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, []);
 
-  // Si el backend responde 401 (token vencido o inválido) se cierra la sesión y se vuelve al login
+  // Andamiaje para la v2: en la v1 nadie emite este evento. Con backend, api.js lo emitirá al recibir
+  // un 401 (token vencido o inválido) y aquí se cierra la sesión y se vuelve al login
   useEffect(() => {
     const onExpired = () => {
       setUser(null);
@@ -36,23 +34,14 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired);
   }, [navigate]);
 
-  // Guarda la sesión y lleva a cada rol a su pantalla
-  const startSession = async (accessToken) => {
-    localStorage.setItem('token', accessToken);
-    clearLegacyOrderStorage();
-    const userData = await authService.getMe();
-    setUser(userData);
-
-    if (userData.role === 'admin') {
-      navigate('/admin');
-    } else {
-      navigate('/habitaciones');
-    }
-  };
+  // Lleva a cada rol a su pantalla
+  const goHome = (userData) => navigate(userData.role === 'admin' ? '/admin' : '/habitaciones');
 
   const login = async (email, password) => {
-    const data = await authService.login(email, password);
-    await startSession(data.access_token);
+    const userData = await authService.login(email, password);
+    clearLegacyOrderStorage();
+    setUser(userData);
+    goHome(userData);
   };
 
   const register = async (userData) => {
@@ -69,15 +58,21 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
     // En un computador compartido, el siguiente usuario no debe ver el carrito del anterior
     if (user) localStorage.removeItem(cartStorageKey(user.id));
     clearLegacyOrderStorage();
+    authService.logout();
     setUser(null);
     navigate('/login');
   };
 
-  if (loading) return <div>Cargando...</div>;
+  if (loading) {
+    return (
+      <div className={styles.loading} role="status" aria-label="Cargando">
+        <div className={ordersStyles.spinner} />
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{ user, login, register, logout, updateProfile }}>

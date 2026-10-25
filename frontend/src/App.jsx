@@ -10,13 +10,21 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminClients from './pages/admin/AdminClients';
 import ProfilePage from './pages/profile/ProfilePage';
 import AdminProducts from './pages/admin/AdminProducts';
+import { useAuth } from './hooks/useAuth';
+
+// Hasta S13 no hay home pública: sin sesión va al login, con sesión a la home de su rol
+function RootRedirect() {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  return <Navigate to={user.role === 'admin' ? '/admin' : '/habitaciones'} replace />;
+}
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/"         element={<Navigate to="/login" replace />} />
+          <Route path="/"         element={<RootRedirect />} />
           <Route path="/login"    element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           

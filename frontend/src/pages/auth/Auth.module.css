@@ -272,3 +272,31 @@
   cursor: pointer;
 }
 
+/* Nota con las cuentas demo (no hay backend, por eso las credenciales son visibles) */
+.demo-note {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  background: var(--primary-light);
+  border-radius: var(--radius-md);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.demo-note strong { color: var(--text-primary); }
+.demo-actions { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.demo-cred { color: var(--text-primary); }
+.demo-btn {
+  border: 1.5px solid var(--border);
+  background: var(--card-bg);
+  color: var(--primary);
+  font: inherit;
+  font-weight: 600;
+  padding: 3px 12px;
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.demo-btn:hover { background: var(--primary-light); border-color: var(--primary); }
+.demo-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
