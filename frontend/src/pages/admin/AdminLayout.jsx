@@ -4,7 +4,7 @@ import { IconSearch } from '../../components/Icons';
 import styles from './Admin.module.css';
 
 const NAV = [
-  { id: 'pedidos',  icon: '🧾', label: 'Reservas', path: '/admin' },
+  { id: 'panel',    icon: '🧾', label: 'Panel', path: '/admin' },
   { id: 'rooms',    icon: '🛏️', label: 'Habitaciones', path: '/admin/habitaciones' },
   { id: 'guests',   icon: '👥', label: 'Huéspedes', path: '/admin/huespedes' },
   { id: 'settings', icon: '⚙️', label: 'Configuración' },
@@ -19,7 +19,7 @@ export default function AdminLayout({ active, pendingCount = 0, search, onSearch
   return (
     <div className={styles.layout}>
       {/* Sidebar */}
-      <aside className={styles.sidebar}>
+      <aside className={styles.sidebar} aria-label="Navegación del panel">
         <div className={styles.brand}>
           <span className={styles['brand-logo']}>🛏️</span>
           <div>
@@ -40,7 +40,7 @@ export default function AdminLayout({ active, pendingCount = 0, search, onSearch
             >
               <span>{item.icon}</span> {item.label}
               {!item.path && <em>Pronto</em>}
-              {item.id === 'pedidos' && pendingCount > 0 && <b className={styles['nav-badge']}>{pendingCount}</b>}
+              {item.id === 'panel' && pendingCount > 0 && <b className={styles['nav-badge']}>{pendingCount}</b>}
             </button>
           ))}
         </nav>
@@ -64,7 +64,7 @@ export default function AdminLayout({ active, pendingCount = 0, search, onSearch
           </label>
           <span className={[styles.connection, online ? '' : styles.offline].join(' ')}>
             <span className={styles['connection-dot']} />
-            {online ? 'Tienda en línea' : 'Sin conexión con el servidor'}
+            {online ? 'Hotel en línea' : 'Sin conexión con el servidor'}
           </span>
           <span className={styles.today}>
             📅 {now.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}

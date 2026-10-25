@@ -13,11 +13,6 @@
   from { opacity: 0; transform: translate(-50%, 10px); }
   to   { opacity: 1; transform: translate(-50%, 0); }
 }
-@keyframes pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(217, 48, 37, 0.4); }
-  70%  { box-shadow: 0 0 0 6px rgba(217, 48, 37, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(217, 48, 37, 0); }
-}
 
 /* ---------- Sidebar ---------- */
 .sidebar {
@@ -218,7 +213,6 @@
 .title-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--primary); }
 .page-head p { margin-top: 4px; font-size: 0.92rem; color: var(--text-secondary); }
 .refresh-group { display: flex; align-items: center; gap: 14px; }
-.refresh-group small { font-size: 0.76rem; color: var(--text-muted); }
 .btn-refresh {
   white-space: nowrap;
   display: inline-flex;
@@ -275,7 +269,9 @@
   color: var(--text-primary);
   line-height: 1;
 }
-.kpi-value small { font-size: 0.82rem; font-weight: 500; color: var(--text-muted); }
+.kpi-value small { font-size: 0.82rem; font-weight: 500; color: var(--text-muted); white-space: nowrap; }
+/* Cada fecha en una línea; la columna puede partirse entre llegada y salida */
+.date { white-space: nowrap; }
 .kpi-foot { font-size: 0.78rem; font-weight: 600; color: var(--primary); }
 .chip {
   align-self: flex-start;
@@ -366,13 +362,6 @@
   font-size: 0.92rem;
 }
 
-.order-id { display: flex; align-items: center; gap: 8px; }
-.order-id strong { color: var(--primary); }
-.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.dot-pending  { background: #d93025; animation: pulse 1.8s infinite; }
-.dot-progress { background: #E6A700; }
-.dot-done     { background: var(--primary-mid); }
-.dot-rejected { background: #9aa59a; }
 .muted { font-size: 0.76rem; color: var(--text-muted); }
 
 .client { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
@@ -421,10 +410,10 @@
   white-space: nowrap;
 }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.status-pending  { background: #fde8e7; color: #b3261e; }
-.status-progress { background: #FFF3CD; color: #856404; }
+.status-pending  { background: var(--error-bg); color: var(--error); }
+.status-progress { background: var(--warning-bg); color: var(--warning); }
 .status-done     { background: var(--primary-light); color: var(--primary); }
-.status-rejected { background: #eef1ee; color: #6b776b; }
+.status-rejected { background: var(--neutral-bg); color: var(--neutral); }
 
 .col-actions { width: 210px; }
 .actions, .confirm { display: flex; align-items: center; gap: 8px; }
@@ -450,48 +439,11 @@
 .btn-ghost:hover:not(:disabled) { background: var(--input-bg); }
 .actions button:disabled, .confirm button:disabled { opacity: 0.6; cursor: progress; }
 .confirm .btn-danger:disabled { cursor: not-allowed; }
-/* Mismo estilo que el buscador del panel, en tamaño compacto para la tabla */
 form.confirm { flex-wrap: wrap; }
-.reason-input {
-  /* Ocupa el ancho de la columna de acciones; los botones bajan a la siguiente línea */
-  flex: 1 0 100%;
-  min-width: 0;
-  padding: 7px 12px;
-  border-radius: var(--radius-xl);
-  background: var(--input-bg);
-  border: 1.5px solid var(--border);
-  font: inherit;
-  font-size: 0.8rem;
-  color: var(--text-primary);
-  outline: none;
-  transition: border-color var(--transition);
+.btn-accept:focus-visible, .btn-reject:focus-visible, .btn-ghost:focus-visible, .tab:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
-.reason-input:focus { border-color: var(--input-focus); }
-
-/* ---------- Pagination ---------- */
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 6px 2px;
-  font-size: 0.84rem;
-  color: var(--text-secondary);
-}
-.pages { display: flex; gap: 6px; }
-.pages button {
-  min-width: 34px;
-  height: 34px;
-  padding: 0 12px;
-  border-radius: var(--radius-xl);
-  background: var(--input-bg);
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-  font-size: 0.84rem;
-  font-weight: 600;
-}
-.pages button:hover:not(:disabled) { border-color: var(--primary-mid); color: var(--primary); }
-.pages button.active { background: var(--primary); border-color: var(--primary); color: #fff; }
-.pages button:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ---------- Toast ---------- */
 .toast {
@@ -724,5 +676,13 @@ form.confirm { flex-wrap: wrap; }
   .connection { display: none; }
   .page-head h1 { font-size: 1.5rem; }
   .panel { padding: 12px; }
-  .pagination { flex-direction: column; gap: 10px; }
 }
+
+/* ---------- Panel del hotel ---------- */
+.res-code { color: var(--primary); white-space: nowrap; }
+.room-cell { max-width: 200px; white-space: normal; }
+.field-error { font-size: 0.8rem; font-weight: 600; color: var(--error); }
+.char-count { font-size: 0.74rem; color: var(--text-muted); text-align: right; }
+.input[aria-invalid='true'] { border-color: var(--error-strong); }
+.actions { flex-wrap: wrap; }
+.reject-note { display: block; margin-top: 4px; }
