@@ -5,6 +5,18 @@ import { validateStay } from '../utils/stay';
 // Reservas que ocupan una unidad del tipo
 const ACTIVE_STATUSES = ['pendiente', 'confirmada', 'en_curso'];
 
+// Regla única de disponibilidad (la usan la búsqueda y la creación de reservas).
+// Un paquete dura sus propias noches desde la llegada, sin importar la salida elegida.
+// reason: null | 'capacity' (más huéspedes que la capacidad) | 'sold_out' (sin unidades libres)
+export function checkRoomAvailability(roomType, { checkIn, checkOut, guests = 1 }, reservations) {
+  const end = roomType.category === 'paquete' ? addDays(checkIn, roomType.nights) : checkOut;
+  const taken = reservations.filter((res) => ACTIVE_STATUSES.includes(res.status)
+    && res.room_type_id === roomType.id && res.check_in < end && checkIn < res.check_out).length;
+  const remaining = Math.max(0, roomType.units - taken);
+  const reason = guests > roomType.capacity ? 'capacity' : remaining === 0 ? 'sold_out' : null;
+  return { available: reason === null, remaining, reason, end };
+}
+
 // Precio mostrado: por noche en habitaciones, total de la estadía en paquetes
 export const displayPrice = (r) => (r.category === 'paquete' ? r.price : r.price_per_night);
 
@@ -56,16 +68,10 @@ export const roomsService = {
 
     const people = Number(guests) || 1;
     const { roomTypes, reservations } = loadDb();
-    const active = reservations.filter((res) => ACTIVE_STATUSES.includes(res.status));
     const result = {};
     for (const r of roomTypes) {
-      // Un paquete dura sus propias noches desde la llegada, sin importar la salida elegida
-      const end = r.category === 'paquete' ? addDays(checkIn, r.nights) : checkOut;
-      const taken = active.filter((res) => res.room_type_id === r.id
-        && res.check_in < end && checkIn < res.check_out).length;
-      const remaining = Math.max(0, r.units - taken);
-      const reason = people > r.capacity ? 'capacity' : remaining === 0 ? 'sold_out' : null;
-      result[r.id] = { available: reason === null, remaining, reason };
+      const { available, remaining, reason } = checkRoomAvailability(r, { checkIn, checkOut, guests: people }, reservations);
+      result[r.id] = { available, remaining, reason };
     }
     return result;
   },

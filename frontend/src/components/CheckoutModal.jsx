@@ -1,116 +1,91 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { IconMapPin, IconLock, IconShield, IconCheck, IconArrowRight, IconPhone, IconTruck } from './Icons';
+import { IconUser, IconMail, IconPhone, IconLock, IconShield, IconCheck, IconArrowRight } from './Icons';
 import PaymentCardForm from './PaymentCardForm';
-import { BRAND_LABELS, detectBrand, onlyDigits, validateCard } from './cardUtils';
-import { formatOrderId, formatPrice } from '../utils/format';
+import { BRAND_LABELS, detectBrand, validateCard } from './cardUtils';
+import { formatPrice } from '../utils/format';
+import { formatStayDate } from '../utils/dates';
+import { combineQuotes, TAX_RATE } from '../utils/pricing';
+import { reservationsService } from '../services/reservations.service';
 import { useAuth } from '../hooks/useAuth';
-import { orderService } from '../services/order.service';
+import { MAX_REQUESTS, normalizePhone, validateHolder } from '../utils/validation';
 import styles from './CheckoutModal.module.css';
 
 // Tiempo que dura la simulación de "aprobando pago con el banco"
-const CARD_PROCESSING_MS = 1800;
+const CARD_PROCESSING_MS = 1200;
 
 const EMPTY_CARD = { number: '', name: '', expiry: '', cvv: '' };
-const EMPTY_DELIVERY = { address: '', detail: '', phone: '', notes: '' };
-const STEPS = ['Carrito', 'Entrega', 'Pago', 'Confirmación'];
-const TRACKING = ['Recibido', 'Preparando', 'En camino', 'Entregado'];
+const STEPS = ['Estadía', 'Titular', 'Pago', 'Confirmación'];
+const TRACKING = ['Solicitud', 'Confirmación', 'Check-in', 'Check-out'];
 
-function formatPhone(digits) {
-  return [digits.slice(0, 3), digits.slice(3, 6), digits.slice(6, 10)].filter(Boolean).join(' ');
-}
-
-// Billetes sugeridos para pagar en efectivo, siempre por encima del total
-function cashSuggestions(total) {
-  const rounded = [10000, 20000, 50000, 100000].map(bill => Math.ceil(total / bill) * bill);
-  return [...new Set(rounded)].filter(v => v > total).slice(0, 3);
-}
-
-function validateDelivery(delivery) {
-  const errors = {};
-  if (delivery.address.trim().length < 5) errors.address = 'Escribe la dirección completa';
-  if (!/^3\d{9}$/.test(delivery.phone)) errors.phone = 'Celular de 10 dígitos que empiece por 3';
-  return errors;
-}
-
-export default function CheckoutModal({
-  open,
-  onClose,
-  cart,
-  cartCount,
-  cartSubtotal,
-  deliveryCost,
-  cartTotal,
-  clearCart,
-  onOrderPlaced,
-}) {
+/**
+ * Modal "Confirmar reserva". Se monta solo cuando está abierto, así el titular se precarga
+ * desde la sesión y los datos de la tarjeta viven únicamente mientras el modal existe.
+ * Hacia el servicio solo viaja card_last4: número completo, vencimiento y CVV nunca salen de aquí.
+ */
+export default function CheckoutModal({ onClose, items, onReserved }) {
   const navigate = useNavigate();
-  const { user, updateProfile } = useAuth();
-  // Se precargan la dirección y el celular guardados en el perfil
-  const [delivery, setDelivery] = useState(() => ({
-    ...EMPTY_DELIVERY,
-    address: user?.address ?? '',
-    phone: onlyDigits(user?.phone ?? '').slice(0, 10),
+  const { user } = useAuth();
+  const [holder, setHolder] = useState(() => ({
+    name: user?.name ?? '',
+    document: user?.document ?? '',
+    phone: user?.phone ?? '',
+    email: user?.email ?? '',
+    requests: '',
   }));
-  const [saveToProfile, setSaveToProfile] = useState(true);
   const [payment, setPayment] = useState('card');
   const [card, setCard] = useState(EMPTY_CARD);
-  const [cashWith, setCashWith] = useState('exact');
-  const [cashOther, setCashOther] = useState('');
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [stage, setStage] = useState('form'); // form | processing | sending
-  const [error, setError] = useState('');
+  const [serviceError, setServiceError] = useState('');
   const [receipt, setReceipt] = useState(null);
   const busy = stage !== 'form';
+  const uid = useId();
+  const dialogRef = useRef(null);
+  const errId = (name) => `${uid}-${name}-error`;
 
-  // Al cerrar se borran los datos de la tarjeta; la dirección se conserva
+  // Foco en el diálogo tras montar (el drawer devuelve el foco al cerrarse en el mismo render)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => dialogRef.current?.focus());
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  const totals = combineQuotes(items.map(i => i.quote));
+
   const closeModal = useCallback(() => {
     setCard(EMPTY_CARD);
-    setTouched({});
-    setSubmitted(false);
-    setError('');
-    setReceipt(null);
     onClose();
   }, [onClose]);
 
   useEffect(() => {
-    if (!open || busy) return;
+    if (busy) return undefined;
     const onKey = (e) => { if (e.key === 'Escape') closeModal(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, busy, closeModal]);
+  }, [busy, closeModal]);
 
-  if (!open) return null;
+  const holderErrors = validateHolder(holder);
+  const paymentErrors = payment === 'card' ? validateCard(card) : {};
+  const errors = { ...holderErrors, ...paymentErrors };
 
-  const paysWith = cashWith === 'exact' ? cartTotal
-    : cashWith === 'other' ? Number(cashOther || 0)
-    : cashWith;
-  const change = paysWith - cartTotal;
-
-  const deliveryErrors = validateDelivery(delivery);
-  const paymentErrors = payment === 'card'
-    ? validateCard(card)
-    : (change < 0 ? { cash: 'El monto debe cubrir el total del pedido' } : {});
-  const errors = { ...deliveryErrors, ...paymentErrors };
+  const visibleErrors = Object.keys(errors).filter(k => submitted || touched[k]);
+  // El aviso global se deriva: desaparece al corregir los campos
+  const error = serviceError || (submitted && visibleErrors.length > 0 ? 'Revisa los campos marcados en rojo.' : '');
 
   const fieldError = (name) => ((submitted || touched[name]) ? errors[name] : '');
   const touch = (name) => () => setTouched(t => ({ ...t, [name]: true }));
-  const setField = (field) => (e) => setDelivery(d => ({ ...d, [field]: e.target.value }));
+  const setField = (field, clean = (v) => v) => (e) => setHolder(h => ({ ...h, [field]: clean(e.target.value) }));
+  const inputClass = (name) => [styles.input, styles['with-icon'], fieldError(name) ? styles['input-error'] : ''].join(' ');
 
-  const fullAddress = [delivery.address.trim(), delivery.detail.trim()].filter(Boolean).join(', ');
-  const differsFromProfile = fullAddress !== (user?.address ?? '') || delivery.phone !== onlyDigits(user?.phone ?? '');
-
-  const currentStep = receipt ? 3 : Object.keys(deliveryErrors).length === 0 ? 2 : 1;
+  const currentStep = receipt ? 3 : Object.keys(holderErrors).length === 0 ? 2 : 1;
 
   async function handleConfirm() {
     setSubmitted(true);
     if (Object.keys(errors).length > 0) {
-      setError('Revisa los campos marcados en rojo.');
       return;
     }
-    setError('');
-    const address = fullAddress;
+    setServiceError('');
 
     try {
       if (payment === 'card') {
@@ -118,57 +93,58 @@ export default function CheckoutModal({
         await new Promise(resolve => setTimeout(resolve, CARD_PROCESSING_MS));
       }
       setStage('sending');
+      const isCard = payment === 'card';
+      const brand = isCard ? detectBrand(card.number) : null;
+      const last4 = isCard ? card.number.slice(-4) : null;
 
-      const resData = await orderService.createOrder({
-        address: address,
-        phone: delivery.phone,
-        notes: delivery.notes.trim(),
-        payment_method: payment,
-        items: cart.map(item => ({ product_id: item.id, quantity: item.qty })),
+      const created = await reservationsService.createMany({
+        items: items.map(i => ({
+          roomTypeId: i.roomTypeId,
+          checkIn: i.checkIn,
+          checkOut: i.checkOut,
+          guests: i.guests,
+          extras: i.extras.map(x => ({ extraId: x.extra.id, qty: x.qty })),
+        })),
+        holder: {
+          name: holder.name,
+          document: holder.document,
+          phone: holder.phone,
+          email: holder.email,
+          special_requests: holder.requests,
+        },
+        payment: payment === 'card' ? { method: 'card', card_last4: last4 } : { method: 'hotel' },
       });
 
-      const brand = detectBrand(card.number);
-      const newReceipt = {
-        id: resData.id,
-        createdAt: new Date().toISOString(),
-        address,
-        phone: formatPhone(delivery.phone),
-        notes: delivery.notes.trim(),
-        items: cart.map(item => ({ ...item })),
-        subtotal: cartSubtotal,
-        // Los montos finales son los que calculó el servidor
-        deliveryCost: resData.delivery_fee,
-        total: resData.total_price,
-        paymentLabel: payment === 'card'
-          ? `${BRAND_LABELS[brand]} •••• ${card.number.slice(-4)}`
-          : 'Pagar en el hotel',
-        change: payment === 'cash' ? change : 0,
-      };
-      setReceipt(newReceipt);
-      onOrderPlaced?.(newReceipt);
-      // Si el cliente lo pidió, la dirección queda guardada para el próximo pedido (si falla, el pedido ya está hecho)
-      if (saveToProfile && differsFromProfile) {
-        updateProfile({ address, phone: delivery.phone }).catch(() => {});
-      }
+      setReceipt({
+        reservations: created,
+        total: created.reduce((sum, r) => sum + r.total, 0),
+        method: payment,
+        paymentLabel: payment === 'card' ? `${BRAND_LABELS[brand]} •••• ${last4}` : 'Pagar en el hotel',
+        names: Object.fromEntries(items.map(i => [i.roomTypeId, i.roomType.name])),
+      });
       setCard(EMPTY_CARD);
-      clearCart();
+      onReserved?.(items.map(i => i.uid));
     } catch (err) {
-      setError(err instanceof TypeError
-        ? 'No pudimos conectar con el servidor. Intenta de nuevo en un momento.'
-        : err.message);
+      setServiceError(err.message || 'No pudimos confirmar tu reserva. Intenta de nuevo.');
     } finally {
       setStage('form');
     }
   }
 
   const confirmLabel = stage === 'processing' ? 'Procesando pago con tu banco…'
-    : stage === 'sending' ? 'Creando tu pedido…'
-    : payment === 'card' ? <>Pagar {formatPrice(cartTotal)} <IconLock size={15} /></>
-    : <>Confirmar pedido <IconArrowRight size={16} /></>;
+    : stage === 'sending' ? 'Confirmando…'
+    : payment === 'card' ? <>Pagar {formatPrice(totals.total)} <IconLock size={15} /></>
+    : <>Confirmar reserva <IconArrowRight size={16} /></>;
+
+  const goToReservations = () => {
+    const list = receipt.reservations;
+    closeModal();
+    navigate(list.length === 1 ? `/reservas/${list[0].id}` : '/reservas');
+  };
 
   return (
     <div className={styles.overlay} onClick={() => !busy && closeModal()}>
-      <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="checkout-title" onClick={e => e.stopPropagation()}>
+      <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="checkout-title" tabIndex={-1} ref={dialogRef} onClick={e => e.stopPropagation()}>
 
         {/* Header */}
         <div className={styles.header}>
@@ -191,17 +167,19 @@ export default function CheckoutModal({
         </ol>
 
         {receipt ? (
-          /* ---------- Pedido confirmado ---------- */
+          /* ---------- Reserva confirmada ---------- */
           <div className={styles.success}>
             <div className={styles['success-icon']}><IconCheck size={34} /></div>
-            <h2>¡Tu pedido va en camino!</h2>
+            <h2 id="checkout-title">{receipt.method === 'card' ? 'Tu estadía está confirmada' : 'Recibimos tu solicitud'}</h2>
             <p className={styles['success-sub']}>
-              Pedido <strong>{formatOrderId(receipt.id)}</strong> • Llega en <strong>35 - 45 min</strong>
+              {receipt.method === 'hotel' && 'El hotel la confirmará pronto. '}
+              {receipt.reservations.length > 1 ? 'Códigos' : 'Código'} de reserva:{' '}
+              <strong>{receipt.reservations.map(r => r.code).join(', ')}</strong>
             </p>
 
             <ol className={styles.tracking}>
               {TRACKING.map((t, i) => (
-                <li key={t} className={i === 0 ? styles.active : ''}>
+                <li key={t} className={i === (receipt.method === 'card' ? 1 : 0) ? styles.active : ''}>
                   <span />
                   {t}
                 </li>
@@ -209,125 +187,137 @@ export default function CheckoutModal({
             </ol>
 
             <div className={styles.receipt}>
-              {receipt.items.map(item => (
-                <div key={item.id} className={styles['receipt-row']}>
-                  <span>{item.name} <em>x{item.qty}</em></span>
-                  <span>{formatPrice(item.price * item.qty)}</span>
+              {receipt.reservations.map(r => (
+                <div key={r.id} className={styles['receipt-row']}>
+                  <span>{receipt.names[r.room_type_id]} <em>{formatStayDate(r.check_in)} → {formatStayDate(r.check_out)}</em></span>
+                  <span>{formatPrice(r.total)}</span>
                 </div>
               ))}
               <div className={styles.divider} />
-              <div className={styles['receipt-row']}><span>Subtotal</span><span>{formatPrice(receipt.subtotal)}</span></div>
-              <div className={styles['receipt-row']}><span>Servicio</span><span>{formatPrice(receipt.deliveryCost)}</span></div>
               <div className={[styles['receipt-row'], styles['receipt-total']].join(' ')}>
                 <span>Total</span><span>{formatPrice(receipt.total)}</span>
               </div>
               <div className={styles.divider} />
               <div className={styles['receipt-row']}><span>Pago</span><span>{receipt.paymentLabel}</span></div>
-              {receipt.change > 0 && (
-                <div className={styles['receipt-row']}><span>Cambio a devolver</span><span>{formatPrice(receipt.change)}</span></div>
-              )}
-              <div className={styles['receipt-row']}><span>Entrega en</span><span>{receipt.address}</span></div>
-              <div className={styles['receipt-row']}><span>Contacto</span><span>{receipt.phone}</span></div>
-              {receipt.notes && (
-                <div className={styles['receipt-row']}><span>Indicaciones</span><span>{receipt.notes}</span></div>
-              )}
+              <div className={styles['receipt-row']}><span>Titular</span><span>{receipt.reservations[0].guest_name}</span></div>
             </div>
 
             <div className={styles['success-actions']}>
-              <button className={styles['btn-confirm']} onClick={() => { closeModal(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-                Volver a la portada
+              <button className={styles['btn-confirm']} onClick={goToReservations} autoFocus>
+                {receipt.reservations.length === 1 ? 'Ver mi reserva' : 'Ver mis reservas'}
               </button>
-              <button className={styles['btn-ghost']} onClick={() => { const id = receipt.id; closeModal(); navigate(`/reservas/${id}`); }}>
-                Ver seguimiento del pedido <IconArrowRight size={15} />
-              </button>
+              <button className={styles['btn-ghost']} onClick={closeModal}>Seguir explorando</button>
             </div>
           </div>
         ) : (
           /* ---------- Formulario ---------- */
           <div className={styles.body}>
             <div className={styles['title-row']}>
-              <div className={styles['title-icon']}>🛍️</div>
+              <div className={styles['title-icon']}>🛎️</div>
               <div>
-                <h2 id="checkout-title">Finalizar pedido</h2>
-                <p>Selección fresca de cosechas directas</p>
+                <h2 id="checkout-title">Confirmar reserva</h2>
+                <p>Revisa tu estadía y completa los datos del titular</p>
               </div>
             </div>
 
             <div className={styles.columns}>
               <div className={styles.left}>
-                {/* 1. Entrega */}
+                {/* 1. Titular */}
                 <section className={styles.card}>
-                  <h3><IconMapPin size={17} /> 1. Datos de entrega</h3>
+                  <h3><IconUser size={17} /> 1. Datos del titular</h3>
 
                   <label className={styles.field}>
-                    <span className={styles.label}>Dirección</span>
+                    <span className={styles.label}>Nombre completo</span>
                     <span className={styles['input-wrap']}>
-                      <span className={styles['input-icon']}><IconMapPin size={16} /></span>
+                      <span className={styles['input-icon']}><IconUser size={16} /></span>
                       <input
-                        className={[styles.input, styles['with-icon'], fieldError('address') ? styles['input-error'] : ''].join(' ')}
-                        placeholder="Ej. Carrera 23 # 98 - 45"
-                        autoComplete="street-address"
-                        value={delivery.address}
-                        onChange={setField('address')}
-                        onBlur={touch('address')}
+                        className={inputClass('name')}
+                        aria-invalid={!!fieldError('name')}
+                        aria-describedby={fieldError('name') ? errId('name') : undefined}
+                        autoComplete="name"
+                        placeholder="Como aparece en tu documento"
+                        value={holder.name}
+                        onChange={setField('name')}
+                        onBlur={touch('name')}
                         disabled={busy}
-                        autoFocus
                       />
                     </span>
-                    {fieldError('address') && <span className={styles['field-error']}>{fieldError('address')}</span>}
+                    {fieldError('name') && <span id={errId('name')} className={styles['field-error']}>{fieldError('name')}</span>}
                   </label>
 
                   <div className={styles['field-row']}>
                     <label className={styles.field}>
-                      <span className={styles.label}>Apto, torre o barrio <em>(opcional)</em></span>
+                      <span className={styles.label}>Documento</span>
                       <input
-                        className={styles.input}
-                        placeholder="Ej. Torre 2, Apto 401"
-                        value={delivery.detail}
-                        onChange={setField('detail')}
+                        aria-invalid={!!fieldError('document')}
+                        aria-describedby={fieldError('document') ? errId('document') : undefined}
+                        className={[styles.input, fieldError('document') ? styles['input-error'] : ''].join(' ')}
+                        placeholder="Cédula o pasaporte"
+                        maxLength={15}
+                        value={holder.document}
+                        onChange={setField('document', v => v.replace(/[^A-Za-z0-9]/g, ''))}
+                        onBlur={touch('document')}
                         disabled={busy}
                       />
+                      {fieldError('document') && <span id={errId('document')} className={styles['field-error']}>{fieldError('document')}</span>}
                     </label>
                     <label className={styles.field}>
-                      <span className={styles.label}>Celular</span>
+                      <span className={styles.label}>Teléfono</span>
                       <span className={styles['input-wrap']}>
                         <span className={styles['input-icon']}><IconPhone size={15} /></span>
                         <input
-                          className={[styles.input, styles['with-icon'], fieldError('phone') ? styles['input-error'] : ''].join(' ')}
-                          inputMode="numeric"
-                          autoComplete="tel-national"
-                          placeholder="300 123 4567"
-                          value={formatPhone(delivery.phone)}
-                          onChange={e => setDelivery(d => ({ ...d, phone: onlyDigits(e.target.value).slice(0, 10) }))}
+                          className={inputClass('phone')}
+                          aria-invalid={!!fieldError('phone')}
+                          aria-describedby={fieldError('phone') ? errId('phone') : undefined}
+                          type="tel"
+                          autoComplete="tel"
+                          placeholder="+57 300 123 4567"
+                          value={holder.phone}
+                          onChange={setField('phone', normalizePhone)}
                           onBlur={touch('phone')}
                           disabled={busy}
                         />
                       </span>
-                      {fieldError('phone') && <span className={styles['field-error']}>{fieldError('phone')}</span>}
+                      {fieldError('phone') && <span id={errId('phone')} className={styles['field-error']}>{fieldError('phone')}</span>}
                     </label>
                   </div>
 
                   <label className={styles.field}>
-                    <span className={styles.label}>Indicaciones para el repartidor <em>(opcional)</em></span>
-                    <textarea
-                      className={[styles.input, styles.textarea].join(' ')}
-                      placeholder="Ej. Dejar en portería, timbre dañado, llamar al llegar"
-                      maxLength={160}
-                      rows={2}
-                      value={delivery.notes}
-                      onChange={setField('notes')}
-                      disabled={busy}
-                    />
+                    <span className={styles.label}>Correo electrónico</span>
+                    <span className={styles['input-wrap']}>
+                      <span className={styles['input-icon']}><IconMail size={16} /></span>
+                      <input
+                        className={inputClass('email')}
+                        aria-invalid={!!fieldError('email')}
+                        aria-describedby={fieldError('email') ? errId('email') : undefined}
+                        type="email"
+                        autoComplete="email"
+                        placeholder="tu@correo.com"
+                        value={holder.email}
+                        onChange={setField('email')}
+                        onBlur={touch('email')}
+                        disabled={busy}
+                      />
+                    </span>
+                    {fieldError('email') && <span id={errId('email')} className={styles['field-error']}>{fieldError('email')}</span>}
                   </label>
 
-                  {differsFromProfile && (
-                    <label className={styles['save-check']}>
-                      <input type="checkbox" checked={saveToProfile} onChange={e => setSaveToProfile(e.target.checked)} disabled={busy} />
-                      Guardar esta dirección y celular en mi perfil
-                    </label>
-                  )}
-
-                  <p className={styles.hint}><IconTruck size={14} /> Entrega estimada: <strong>35 - 45 min</strong></p>
+                  <label className={styles.field}>
+                    <span className={styles.label}>Solicitudes especiales <em>(opcional)</em></span>
+                    <textarea
+                      className={[styles.input, styles.textarea].join(' ')}
+                      aria-invalid={!!fieldError('requests')}
+                      aria-describedby={fieldError('requests') ? errId('requests') : undefined}
+                      placeholder="Ej. Cama extra, llegada tarde, piso alto"
+                      maxLength={MAX_REQUESTS}
+                      rows={2}
+                      value={holder.requests}
+                      onChange={setField('requests')}
+                      disabled={busy}
+                    />
+                    {fieldError('requests') && <span id={errId('requests')} className={styles['field-error']}>{fieldError('requests')}</span>}
+                    <span className={styles.counter}>{holder.requests.length}/{MAX_REQUESTS}</span>
+                  </label>
                 </section>
 
                 {/* 2. Pago */}
@@ -336,13 +326,13 @@ export default function CheckoutModal({
                   <div className={styles['pay-grid']}>
                     {[
                       { id: 'card', icon: '💳', title: 'Tarjeta crédito / débito', desc: 'Visa, Mastercard, Amex' },
-                      { id: 'cash', icon: '💵', title: 'Pagar en el hotel', desc: 'Pagas al llegar' },
+                      { id: 'hotel', icon: '🏨', title: 'Pagar en el hotel', desc: 'Pagas al llegar' },
                     ].map(m => (
                       <button
                         key={m.id}
                         type="button"
                         className={[styles['pay-option'], payment === m.id ? styles.selected : ''].join(' ')}
-                        onClick={() => { setPayment(m.id); setError(''); }}
+                        onClick={() => { setPayment(m.id); setServiceError(''); }}
                         aria-pressed={payment === m.id}
                         disabled={busy}
                       >
@@ -357,52 +347,9 @@ export default function CheckoutModal({
                   {payment === 'card' ? (
                     <PaymentCardForm card={card} setCard={setCard} fieldError={fieldError} touch={touch} disabled={busy} />
                   ) : (
-                    <div className={styles.cash}>
-                      <span className={styles.label}>¿Con cuánto vas a pagar?</span>
-                      <div className={styles['cash-options']}>
-                        <button
-                          type="button"
-                          className={[styles['cash-chip'], cashWith === 'exact' ? styles.active : ''].join(' ')}
-                          onClick={() => setCashWith('exact')}
-                          disabled={busy}
-                        >
-                          Exacto
-                        </button>
-                        {cashSuggestions(cartTotal).map(v => (
-                          <button
-                            key={v}
-                            type="button"
-                            className={[styles['cash-chip'], cashWith === v ? styles.active : ''].join(' ')}
-                            onClick={() => setCashWith(v)}
-                            disabled={busy}
-                          >
-                            {formatPrice(v)}
-                          </button>
-                        ))}
-                        <button
-                          type="button"
-                          className={[styles['cash-chip'], cashWith === 'other' ? styles.active : ''].join(' ')}
-                          onClick={() => setCashWith('other')}
-                          disabled={busy}
-                        >
-                          Otro
-                        </button>
-                      </div>
-                      {cashWith === 'other' && (
-                        <input
-                          className={[styles.input, fieldError('cash') ? styles['input-error'] : ''].join(' ')}
-                          inputMode="numeric"
-                          placeholder="Monto con el que pagas"
-                          value={cashOther ? formatPrice(Number(cashOther)) : ''}
-                          onChange={e => setCashOther(onlyDigits(e.target.value).slice(0, 7))}
-                          onBlur={touch('cash')}
-                          disabled={busy}
-                        />
-                      )}
-                      {fieldError('cash')
-                        ? <span className={styles['field-error']}>{fieldError('cash')}</span>
-                        : change > 0 && <p className={styles.change}>El repartidor te devolverá <strong>{formatPrice(change)}</strong></p>}
-                    </div>
+                    <p className={styles.change}>
+                      Tu reserva quedará <strong>pendiente</strong> hasta que el hotel la confirme. Pagas al hacer el check-in.
+                    </p>
                   )}
                 </section>
               </div>
@@ -411,46 +358,49 @@ export default function CheckoutModal({
               <aside className={styles.summary}>
                 <div className={styles['summary-head']}>
                   <h3>Resumen</h3>
-                  <span className={styles.pill}>{cartCount} producto{cartCount !== 1 ? 's' : ''}</span>
+                  <span className={styles.pill}>{items.length} reserva{items.length !== 1 ? 's' : ''}</span>
                 </div>
 
                 <div className={styles.items}>
-                  {cart.map(item => (
-                    <div key={item.id} className={styles.item}>
+                  {items.map(item => (
+                    <div key={item.uid} className={styles.item}>
                       <div className={styles['item-image']}>
-                        {item.image_url ? (
-                          <img src={item.image_url} alt={item.name} className={styles['item-img']} />
-                        ) : (
-                          <div className={[styles['item-img'], styles['item-img-placeholder']].join(' ')}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14M8 10l2-2 4 4 2-2"/></svg>
-                          </div>
-                        )}
+                        <img src={item.roomType.images?.[0]} alt="" className={styles['item-img']} />
                       </div>
                       <div className={styles['item-info']}>
-                        <p className={styles['item-name']}>{item.name}</p>
-                        <p className={styles['item-unit']}>{item.unit} • x{item.qty}</p>
+                        <p className={styles['item-name']}>{item.roomType.name}</p>
+                        <p className={styles['item-unit']}>
+                          {formatStayDate(item.checkIn)} → {formatStayDate(item.checkOut)} • {item.quote.nights} noche{item.quote.nights !== 1 ? 's' : ''} • {item.guests} huésped{item.guests !== 1 ? 'es' : ''}
+                        </p>
+                        {item.extras.length > 0 && (
+                          <p className={styles['item-unit']}>
+                            {item.extras.map(x => `${x.extra.name}${x.qty > 1 ? ` x${x.qty}` : ''}`).join(', ')}
+                          </p>
+                        )}
                       </div>
-                      <span className={styles['item-price']}>{formatPrice(item.price * item.qty)}</span>
+                      <span className={styles['item-price']}>{formatPrice(item.quote.subtotal + item.quote.extras_total)}</span>
                     </div>
                   ))}
                 </div>
 
-                <div className={styles.row}><span>Subtotal</span><span>{formatPrice(cartSubtotal)}</span></div>
-                <div className={styles.row}><span>Servicio</span><span>{deliveryCost == null ? 'Calculando…' : formatPrice(deliveryCost)}</span></div>
+                <div className={styles.row}><span>Alojamiento</span><span>{formatPrice(totals.subtotal)}</span></div>
+                {totals.extras_total > 0 && (
+                  <div className={styles.row}><span>Servicios adicionales</span><span>{formatPrice(totals.extras_total)}</span></div>
+                )}
+                <div className={styles.row}><span>IVA ({Math.round(TAX_RATE * 100)} %)</span><span>{formatPrice(totals.taxes)}</span></div>
                 <div className={styles.divider} />
                 <div className={styles['total-row']}>
-                  <span>Total a pagar</span>
-                  <span>{formatPrice(cartTotal)}</span>
+                  <span>{payment === 'card' ? 'Total a pagar' : 'Total a pagar en el hotel'}</span>
+                  <span>{formatPrice(totals.total)}</span>
                 </div>
-                <p className={styles.taxes}>Impuestos incluidos</p>
 
                 {error && <p className={styles.error} role="alert">{error}</p>}
 
-                <button className={styles['btn-confirm']} onClick={handleConfirm} disabled={busy || cart.length === 0}>
+                <button className={styles['btn-confirm']} onClick={handleConfirm} disabled={busy || items.length === 0}>
                   {busy && <span className={styles.spinner} />}
                   {confirmLabel}
                 </button>
-                <p className={styles.secure}><IconShield size={13} /> Compra protegida • Garantía de frescura Aura</p>
+                <p className={styles.secure}><IconShield size={13} /> Reserva protegida • Cancelación flexible</p>
               </aside>
             </div>
           </div>

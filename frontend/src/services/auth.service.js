@@ -29,6 +29,11 @@ function writeSession(userId) {
   }
 }
 
+// Id del usuario en sesión (otros servicios lo usan para no duplicar la clave)
+export function getSessionUserId() {
+  return readSession();
+}
+
 function clearSession() {
   try {
     localStorage.removeItem(SESSION_KEY);

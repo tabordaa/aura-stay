@@ -4,6 +4,7 @@ import { IconBed, IconBolt, IconCheck } from '../../components/Icons';
 import Navbar from '../../components/Navbar';
 import RoomCard from '../../components/RoomCard';
 import StayDrawer from '../../components/StayDrawer';
+import CheckoutModal from '../../components/CheckoutModal';
 import RoomDetailModal from '../../components/RoomDetailModal';
 import StaySearchBar from '../../components/StaySearchBar';
 import { activeStay, readStay } from '../../utils/stay';
@@ -38,6 +39,7 @@ export default function CatalogPage() {
   const [retryKey, setRetryKey] = useState(0);
   const [notice, setNotice] = useState('');
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [checkoutItems, setCheckoutItems] = useState(null);
   const [availability, setAvailability] = useState({ key: '', map: null });
 
   // La estadía vive en la URL (?in=&out=&guests=); si es inválida no se aplica la disponibilidad
@@ -97,8 +99,17 @@ export default function CatalogPage() {
     setNotice(result === 'duplicate' ? 'Ya está en tu estadía' : 'Agregada a tu estadía');
     setCartOpen(true);
   };
-  // TODO S07: abrir aquí el modal "Confirmar reserva" con los datos de la estadía
-  const handleReserve = () => setNotice('Muy pronto podrás confirmar tu reserva.');
+  // Abre "Confirmar reserva" con una copia de los items válidos (se revalida la disponibilidad al abrir)
+  const handleReserve = () => {
+    const valid = stayCart.items.filter(i => i.status === 'ok' && i.quote);
+    if (valid.length === 0) return;
+    stayCart.recheck();
+    setCheckoutItems(valid);
+    setCartOpen(false);
+  };
+  const closeCheckout = useCallback(() => setCheckoutItems(null), []);
+  // Las reservas hechas salen de la estadía; el servicio ya volvió a validar todo
+  const handleReserved = (uids) => uids.forEach(uid => stayCart.remove(uid));
 
   const toggleFav = (id) => setFavorites(f => f.includes(id) ? f.filter(x => x !== id) : [...f, id]);
   const setFilter = (key) => (e) => setFilters(f => ({ ...f, [key]: e.target.value }));
@@ -264,6 +275,10 @@ export default function CatalogPage() {
         notice={notice}
         onReserve={handleReserve}
       />
+
+      {checkoutItems && (
+        <CheckoutModal items={checkoutItems} onClose={closeCheckout} onReserved={handleReserved} />
+      )}
     </>
   );
 }
