@@ -25,7 +25,7 @@ const TRACKING = ['Solicitud', 'Confirmación', 'Check-in', 'Check-out'];
  */
 export default function CheckoutModal({ onClose, items, onReserved }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [holder, setHolder] = useState(() => ({
     name: user?.name ?? '',
     document: user?.document ?? '',
@@ -40,10 +40,21 @@ export default function CheckoutModal({ onClose, items, onReserved }) {
   const [stage, setStage] = useState('form'); // form | processing | sending
   const [serviceError, setServiceError] = useState('');
   const [receipt, setReceipt] = useState(null);
+  // null = automático (marcada solo si el titular difiere del perfil); true/false = elección del usuario
+  const [saveChoice, setSaveChoice] = useState(null);
+  const [profileWarning, setProfileWarning] = useState('');
+  const differsFromProfile = ['name', 'document', 'phone'].some(k => holder[k].trim() !== (user?.[k] ?? '').trim());
+  const saveToProfile = saveChoice ?? differsFromProfile;
   const busy = stage !== 'form';
   const uid = useId();
   const dialogRef = useRef(null);
+  const mounted = useRef(true);
   const errId = (name) => `${uid}-${name}-error`;
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   // Foco en el diálogo tras montar (el drawer devuelve el foco al cerrarse en el mismo render)
   useEffect(() => {
@@ -124,10 +135,22 @@ export default function CheckoutModal({ onClose, items, onReserved }) {
       });
       setCard(EMPTY_CARD);
       onReserved?.(items.map(i => i.uid));
+
+      // La reserva ya existe: si el perfil falla solo se avisa, no se deshace nada.
+      // El correo del titular no toca el de la cuenta.
+      // Se muestra el éxito primero y el perfil se guarda después, sin retrasar la pantalla.
+      if (saveToProfile && differsFromProfile) {
+        setStage('form');
+        try {
+          await updateProfile({ name: holder.name, phone: holder.phone, document: holder.document });
+        } catch {
+          if (mounted.current) setProfileWarning('No pudimos guardar tus datos en el perfil. Puedes actualizarlos desde Mi perfil.');
+        }
+      }
     } catch (err) {
       setServiceError(err.message || 'No pudimos confirmar tu reserva. Intenta de nuevo.');
     } finally {
-      setStage('form');
+      if (mounted.current) setStage('form');
     }
   }
 
@@ -201,6 +224,8 @@ export default function CheckoutModal({ onClose, items, onReserved }) {
               <div className={styles['receipt-row']}><span>Pago</span><span>{receipt.paymentLabel}</span></div>
               <div className={styles['receipt-row']}><span>Titular</span><span>{receipt.reservations[0].guest_name}</span></div>
             </div>
+
+            {profileWarning && <p className={styles.change} role="status">{profileWarning}</p>}
 
             <div className={styles['success-actions']}>
               <button className={styles['btn-confirm']} onClick={goToReservations} autoFocus>
@@ -281,6 +306,16 @@ export default function CheckoutModal({ onClose, items, onReserved }) {
                       {fieldError('phone') && <span id={errId('phone')} className={styles['field-error']}>{fieldError('phone')}</span>}
                     </label>
                   </div>
+
+                  <label className={styles['save-check']}>
+                    <input
+                      type="checkbox"
+                      checked={saveToProfile}
+                      onChange={e => setSaveChoice(e.target.checked)}
+                      disabled={busy}
+                    />
+                    <span>Guardar en mi perfil</span>
+                  </label>
 
                   <label className={styles.field}>
                     <span className={styles.label}>Correo electrónico</span>
