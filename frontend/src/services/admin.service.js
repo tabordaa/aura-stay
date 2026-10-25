@@ -14,6 +14,32 @@ function requireAdmin(db) {
   return user;
 }
 
+// Métricas de un huésped (única fuente: la usan la fila y el detalle).
+// Regla: cuentan las reservas que NO están canceladas ni rechazadas.
+// - stays = nº de esas reservas; nights = Σ nights; total_spent = Σ total.
+// - last_stay = el check_in más reciente que sea <= hoy; next_stay = el check_in más cercano > hoy.
+// - Las canceladas/rechazadas solo se cuentan aparte (cancelled_count), sin sumar importes.
+function guestMetrics(reservations, today) {
+  const counted = reservations.filter((r) => !['cancelada', 'rechazada'].includes(r.status));
+  const past = counted.map((r) => r.check_in).filter((d) => d <= today).sort();
+  const future = counted.map((r) => r.check_in).filter((d) => d > today).sort();
+  return {
+    stays: counted.length,
+    nights: counted.reduce((n, r) => n + r.nights, 0),
+    total_spent: counted.reduce((n, r) => n + r.total, 0),
+    last_stay: past.length ? past[past.length - 1] : null,
+    next_stay: future.length ? future[0] : null,
+    cancelled_count: reservations.length - counted.length,
+  };
+}
+
+// Nunca se expone `password`
+function publicGuest(user, reservations, today) {
+  const safe = { ...user };
+  delete safe.password;
+  return { ...safe, ...guestMetrics(reservations, today) };
+}
+
 const ROOM_STATUSES = ['disponible', 'ocupada', 'mantenimiento'];
 const FLOOR_SIZE = 10;
 
@@ -243,9 +269,31 @@ export const adminService = {
     return { ...room, room_type_name: db.roomTypes.find((t) => t.id === room.room_type_id)?.name ?? '' };
   },
 
-  // Heredado: S12 lo rehace
-  async getClients() {
+  // Solo usuarios con rol huésped; más gasto primero y luego por nombre
+  async listGuests() {
     await delay();
-    return [];
+    const db = loadDb();
+    requireAdmin(db);
+    const today = todayISO();
+    return db.users
+      .filter((u) => u.role === 'huesped')
+      .map((u) => publicGuest(u, db.reservations.filter((r) => r.user_id === u.id), today))
+      .sort((a, b) => b.total_spent - a.total_spent || a.name.localeCompare(b.name));
+  },
+
+  // Detalle con historial completo (incluye canceladas/rechazadas), más reciente primero
+  async getGuest(id) {
+    await delay();
+    const db = loadDb();
+    requireAdmin(db);
+    const user = db.users.find((u) => u.id === id && u.role === 'huesped');
+    if (!user) throw new Error('Huésped no encontrado');
+    const own = db.reservations.filter((r) => r.user_id === id);
+    return {
+      ...publicGuest(user, own, todayISO()),
+      reservations: own
+        .map((r) => withNames(db, r))
+        .sort((a, b) => b.check_in.localeCompare(a.check_in) || b.created_at.localeCompare(a.created_at)),
+    };
   },
 };
