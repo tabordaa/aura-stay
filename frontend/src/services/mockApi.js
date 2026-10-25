@@ -1,8 +1,10 @@
 // "Base de datos" simulada en localStorage. Es lo único que cambia al pasar al backend (v2).
 import { users } from '../mocks/users';
 import { extras } from '../mocks/extras';
+import { roomTypes } from '../mocks/roomTypes';
+import { packages } from '../mocks/packages';
 
-const DB_KEY = 'aura_stay_db_v1';
+const DB_KEY = 'aura_stay_db_v2';
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sin 0/O/1/I para no confundir
 
 // Simula la latencia de red
@@ -15,7 +17,8 @@ function seed() {
   return {
     users: structuredClone(users),
     extras: structuredClone(extras),
-    roomTypes: [],
+    // Los paquetes comparten colección con los tipos de habitación (category: 'paquete')
+    roomTypes: structuredClone([...roomTypes, ...packages]),
     rooms: [],
     reservations: [],
   };

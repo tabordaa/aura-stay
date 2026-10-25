@@ -1,8 +1,8 @@
 import { useCallback, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { IconTruck, IconBolt, IconCheck } from '../../components/Icons';
+import { IconBed, IconBolt, IconCheck } from '../../components/Icons';
 import Navbar from '../../components/Navbar';
-import ProductCard from '../../components/ProductCard';
+import RoomCard from '../../components/RoomCard';
 import CartDrawer from '../../components/CartDrawer';
 import CheckoutModal from '../../components/CheckoutModal';
 import ActiveOrderBanner from '../../components/ActiveOrderBanner';
@@ -10,40 +10,56 @@ import { isActiveOrder } from '../../utils/orders';
 import { CATEGORIES } from '../../utils/categories';
 import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../hooks/useCart';
-import { productService } from '../../services/product.service';
+import { roomsService } from '../../services/rooms.service';
 import { orderService } from '../../services/order.service';
 import styles from './Catalog.module.css';
 
-const FILTERS = ['Todos', 'Más vendidos', 'Ofertas del día', 'Orgánicos'];
-
-const isOnSale = (p) => p.old_price != null && p.old_price > p.price;
-// Sin tildes ni mayúsculas: "organico" encuentra "Orgánico"
-const normalize = (text) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-const isOrganic = (p) => normalize([p.tag, p.origin, p.name].filter(Boolean).join(' ')).includes('organic');
+const SORTS = [
+  { id: 'recommended', label: 'Recomendados' },
+  { id: 'price_asc', label: 'Precio: menor a mayor' },
+  { id: 'price_desc', label: 'Precio: mayor a menor' },
+  { id: 'popular', label: 'Más reservadas' },
+];
+const GUEST_OPTIONS = Array.from({ length: 6 }, (_, i) => i + 1);
+const EMPTY_FILTERS = { minPrice: '', maxPrice: '', guests: '', sort: 'recommended' };
+// Pausa al teclear para no consultar en cada letra
+const SEARCH_DEBOUNCE_MS = 250;
 
 export default function CatalogPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [activeCategory, setActiveCategory] = useState('frutas');
-  const [activeFilter, setActiveFilter] = useState('Todos');
+  const [activeCategory, setActiveCategory] = useState('habitacion');
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [search, setSearch] = useState('');
+  const [query, setQuery] = useState('');
   const [favorites, setFavorites] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [latestOrderId, setLatestOrderId] = useState(null);
-  const [dbProducts, setDbProducts] = useState([]);
+  const [rooms, setRooms] = useState([]);
   const [catalogState, setCatalogState] = useState('loading'); // loading | ready | error
+  const [retryKey, setRetryKey] = useState(0);
   const [notice, setNotice] = useState('');
-  // Lo define el backend; null mientras carga
 
-  const { cart, qtyOf, addToCart: addEntry, changeQty, removeFromCart, clearCart } = useCart(user?.id, dbProducts);
+  // "Mi estadía" se rehace en S06; mientras tanto el carrito heredado queda vacío
+  const { cart, changeQty, removeFromCart, clearCart } = useCart(user?.id, []);
 
-  // Los más vendidos llegan primero; cada filtro decide luego el orden
-  const loadProducts = useCallback(() => productService.getAllProducts('best_sellers')
-    .then(data => { setDbProducts(data); setCatalogState('ready'); })
-    .catch(() => setCatalogState('error')), []);
+  useEffect(() => {
+    const timer = setTimeout(() => setQuery(search), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [search]);
 
-  useEffect(() => { loadProducts(); }, [loadProducts]);
+  // Al buscar por texto se recorre todo el catálogo, no solo la pestaña abierta
+  const searching = query.trim() !== '';
+  const { minPrice, maxPrice, guests, sort } = filters;
+
+  useEffect(() => {
+    let active = true; // descarta respuestas de consultas viejas
+    roomsService.list({ category: searching ? undefined : activeCategory, q: query, minPrice, maxPrice, guests, sort })
+      .then(data => { if (active) { setRooms(data); setCatalogState('ready'); } })
+      .catch(() => { if (active) setCatalogState('error'); });
+    return () => { active = false; };
+  }, [activeCategory, searching, query, minPrice, maxPrice, guests, sort, retryKey]);
 
   useEffect(() => {
     if (!notice) return undefined;
@@ -51,7 +67,7 @@ export default function CatalogPage() {
     return () => clearTimeout(timer);
   }, [notice]);
 
-  const retryCatalog = () => { setCatalogState('loading'); loadProducts(); };
+  const retryCatalog = () => { setCatalogState('loading'); setRetryKey(k => k + 1); };
 
   // Muestra el aviso de seguimiento si el cliente tiene un pedido en curso
   useEffect(() => {
@@ -71,33 +87,15 @@ export default function CatalogPage() {
   const closeCheckout = useCallback(() => setCheckoutOpen(false), []);
 
   const toggleFav = (id) => setFavorites(f => f.includes(id) ? f.filter(x => x !== id) : [...f, id]);
+  const setFilter = (key) => (e) => setFilters(f => ({ ...f, [key]: e.target.value }));
+  const hasFilters = searching || Object.keys(EMPTY_FILTERS).some(k => filters[k] !== EMPTY_FILTERS[k]);
+  const clearFilters = () => { setSearch(''); setQuery(''); setFilters(EMPTY_FILTERS); };
 
-  const addToCart = (product) => {
-    if (!addEntry(product)) setNotice(`No hay más unidades disponibles de ${product.name}`);
-  };
-
-  // Al buscar se recorre todo el catálogo, no solo la categoría abierta
-  const term = normalize(search.trim());
-  const filtered = dbProducts.filter(p => {
-    const matchCategory = term ? true : p.category === activeCategory;
-    const matchSearch   = !term || normalize([p.name, p.tag, p.origin].filter(Boolean).join(' ')).includes(term);
-    const matchFilter   = activeFilter === 'Todos' ? true
-      : activeFilter === 'Más vendidos' ? p.units_sold > 0
-      : activeFilter === 'Ofertas del día' ? isOnSale(p)
-      : activeFilter === 'Orgánicos' ? isOrganic(p)
-      : true;
-    return matchCategory && matchSearch && matchFilter;
-  });
-  // La API los entrega por unidades vendidas; fuera de "Más vendidos" se conserva el orden de siempre
-  if (activeFilter !== 'Más vendidos') filtered.sort((a, b) => a.id - b.id);
-
-  const activeCategoryLabel = term
-    ? `Resultados para "${search.trim()}"`
+  const sectionTitle = searching
+    ? `Resultados para "${query.trim()}"`
     : CATEGORIES.find(c => c.id === activeCategory)?.label ?? '';
-  const emptyMessage = term
-    ? 'No encontramos productos con esa búsqueda. Prueba con otra palabra.'
-    : activeFilter === 'Todos' ? 'Pronto tendremos productos en esta categoría.'
-    : 'Ningún producto de esta categoría coincide con el filtro.';
+  const count = rooms.length;
+  const priceRangeInvalid = minPrice !== '' && maxPrice !== '' && Number(minPrice) > Number(maxPrice);
 
   return (
     <>
@@ -112,36 +110,21 @@ export default function CatalogPage() {
         />
 
         <div className={styles['catalog-body']}>
-          {/* Sidebar */}
-          <aside className={styles['sidebar']}>
-            <p className={styles['sidebar-title']}>Categorías</p>
-            {CATEGORIES.map(cat => (
-              <div key={cat.id} className={[styles['sidebar-item'], activeCategory === cat.id ? styles.active : ''].join(' ')}
-                onClick={() => { setActiveCategory(cat.id); setActiveFilter('Todos'); }}
-                role="button"
-              >
-                <span className={styles['cat-icon']}>{cat.icon}</span>
-                {cat.label}
-              </div>
-            ))}
-          </aside>
-
-          {/* Main */}
           <main className={styles['catalog-main']}>
             {latestOrderId && <ActiveOrderBanner orderId={latestOrderId} />}
 
             {/* Welcome Banner */}
             <div className={styles['welcome-banner']}>
               <div className={styles['banner-left']}>
-                <div className={styles['banner-badge']}><IconTruck size={13} /> Reserva en minutos</div>
-                <h1>¡Hola, {user?.name || 'Invitado'}!<br />¿Qué necesitas hoy?</h1>
-                <p>Encuentra tus alimentos frescos directamente del campo a tu mesa en minutos. Cosecha del día garantizada.</p>
+                <div className={styles['banner-badge']}><IconBed size={13} /> Reserva en minutos</div>
+                <h1>¡Hola, {user?.name || 'Invitado'}!<br />¿Dónde quieres hospedarte?</h1>
+                <p>Habitaciones, suites y paquetes pensados para descansar. Elige tu estadía y reserva sin filas ni llamadas.</p>
                 <div className={styles['banner-meta']}>
-                  <span><IconCheck size={13} /> 100% Calidad local</span>
-                  <span><IconBolt size={13} /> Entrega express 45 min</span>
+                  <span><IconCheck size={13} /> Cancelación flexible</span>
+                  <span><IconBolt size={13} /> Confirmación inmediata</span>
                 </div>
               </div>
-              <div className={styles['banner-right']}>🥦🍅<br />🥑🍞</div>
+              <div className={styles['banner-right']}>🏨🛏️<br />🌴🛎️</div>
             </div>
 
             {/* Section header */}
@@ -149,50 +132,80 @@ export default function CatalogPage() {
               <div>
                 <div className={styles['section-meta']}>
                   <div className={styles['section-dot']} />
-                  <span>Catálogo Selección</span>
+                  <span>Nuestras estancias</span>
                 </div>
-                <h2>{activeCategoryLabel}</h2>
-                <p className={styles['section-sub']}>{filtered.length} producto{filtered.length !== 1 ? 's' : ''} disponible{filtered.length !== 1 ? 's' : ''}</p>
+                <h2>{sectionTitle}</h2>
+                <p className={styles['section-sub']}>
+                  {catalogState === 'ready' ? `${count} opci${count !== 1 ? 'ones' : 'ón'} disponible${count !== 1 ? 's' : ''}` : ' '}
+                </p>
               </div>
               <div className={styles['filter-tabs']}>
-                {FILTERS.map(f => (
-                  <button key={f} className={[styles['tab-btn'], activeFilter === f ? styles.active : ''].join(' ')} onClick={() => setActiveFilter(f)}>{f}</button>
+                {CATEGORIES.map(cat => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    aria-pressed={!searching && activeCategory === cat.id}
+                    className={[styles['tab-btn'], !searching && activeCategory === cat.id ? styles.active : ''].join(' ')}
+                    onClick={() => { setActiveCategory(cat.id); setSearch(''); setQuery(''); }}
+                  >
+                    {cat.icon} {cat.label}
+                  </button>
                 ))}
               </div>
             </div>
 
-            {/* Product Grid */}
+            {/* Filtros: precio, huéspedes y orden */}
+            <div className={styles['filters-bar']}>
+              <div className={styles['filter-field']}>
+                <label htmlFor="f-min">Precio mínimo</label>
+                <input id="f-min" type="number" min="0" step="10000" placeholder="Sin mínimo" value={minPrice} onChange={setFilter('minPrice')} />
+              </div>
+              <div className={styles['filter-field']}>
+                <label htmlFor="f-max">Precio máximo</label>
+                <input id="f-max" type="number" min="0" step="10000" placeholder="Sin límite" value={maxPrice} onChange={setFilter('maxPrice')} />
+              </div>
+              <div className={styles['filter-field']}>
+                <label htmlFor="f-guests">Huéspedes</label>
+                <select id="f-guests" value={guests} onChange={setFilter('guests')}>
+                  <option value="">Cualquiera</option>
+                  {GUEST_OPTIONS.map(n => <option key={n} value={n}>{n} {n === 1 ? 'huésped' : 'huéspedes'}</option>)}
+                </select>
+              </div>
+              <div className={styles['filter-field']}>
+                <label htmlFor="f-sort">Ordenar por</label>
+                <select id="f-sort" value={sort} onChange={setFilter('sort')}>
+                  {SORTS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                </select>
+              </div>
+              {priceRangeInvalid && (
+                <p className={styles['filter-error']} role="alert">El precio mínimo no puede ser mayor que el máximo</p>
+              )}
+              {hasFilters && !(catalogState === 'ready' && count === 0) && (
+                <button type="button" className={styles['btn-secondary']} onClick={clearFilters}>Limpiar filtros</button>
+              )}
+            </div>
+
+            {/* Grid */}
             {catalogState === 'loading' ? (
               <div className={styles['catalog-state']} role="status">
-                <span className={styles.spinner} /> Cargando productos frescos…
+                <span className={styles.spinner} /> Buscando las mejores estancias…
               </div>
             ) : catalogState === 'error' ? (
               <div className={styles['catalog-state']} role="alert">
                 <span className={styles['state-icon']}>📡</span>
-                <p>No pudimos cargar el catálogo. Revisa tu conexión e intenta de nuevo.</p>
+                <p>No pudimos cargar las habitaciones. Revisa tu conexión e intenta de nuevo.</p>
                 <button type="button" className={styles['btn-secondary']} onClick={retryCatalog}>Reintentar</button>
               </div>
-            ) : filtered.length === 0 ? (
+            ) : count === 0 ? (
               <div className={styles['catalog-state']}>
                 <span className={styles['state-icon']}>🔎</span>
-                <p>{emptyMessage}</p>
-                {(term || activeFilter !== 'Todos') && (
-                  <button type="button" className={styles['btn-secondary']} onClick={() => { setSearch(''); setActiveFilter('Todos'); }}>
-                    Ver todos los productos
-                  </button>
-                )}
+                <p>No encontramos habitaciones con esos filtros</p>
+                <button type="button" className={styles['btn-secondary']} onClick={clearFilters}>Limpiar filtros</button>
               </div>
             ) : (
               <div className={styles['product-grid']}>
-                {filtered.map(product => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    inCart={qtyOf(product.id)}
-                    favorites={favorites}
-                    toggleFav={toggleFav}
-                    addToCart={addToCart}
-                  />
+                {rooms.map(room => (
+                  <RoomCard key={room.id} room={room} favorites={favorites} toggleFav={toggleFav} />
                 ))}
               </div>
             )}
@@ -223,8 +236,9 @@ export default function CatalogPage() {
         deliveryCost={deliveryCost}
         cartTotal={cartTotal}
         clearCart={clearCart}
-        onOrderPlaced={(receipt) => { setLatestOrderId(receipt.id); loadProducts(); }}
+        onOrderPlaced={(receipt) => setLatestOrderId(receipt.id)}
       />
     </>
   );
 }
+
