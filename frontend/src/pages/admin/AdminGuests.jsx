@@ -158,7 +158,7 @@ export default function AdminGuests() {
                         </span>
                       </button>
                     </td>
-                    <td>
+                    <td className={styles['contact-cell']}>
                       <span>{g.phone || '—'}</span>
                       <small className={[styles.muted, styles.block].join(' ')}>{g.email}</small>
                     </td>

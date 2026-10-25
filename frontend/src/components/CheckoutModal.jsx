@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import useFocusTrap from '../hooks/useFocusTrap';
 import { useNavigate } from 'react-router';
 import { IconUser, IconMail, IconPhone, IconLock, IconShield, IconCheck, IconArrowRight } from './Icons';
 import PaymentCardForm from './PaymentCardForm';
@@ -56,12 +57,6 @@ export default function CheckoutModal({ onClose, items, onReserved }) {
     return () => { mounted.current = false; };
   }, []);
 
-  // Foco en el diálogo tras montar (el drawer devuelve el foco al cerrarse en el mismo render)
-  useEffect(() => {
-    const id = requestAnimationFrame(() => dialogRef.current?.focus());
-    return () => cancelAnimationFrame(id);
-  }, []);
-
   const totals = combineQuotes(items.map(i => i.quote));
 
   const closeModal = useCallback(() => {
@@ -69,12 +64,8 @@ export default function CheckoutModal({ onClose, items, onReserved }) {
     onClose();
   }, [onClose]);
 
-  useEffect(() => {
-    if (busy) return undefined;
-    const onKey = (e) => { if (e.key === 'Escape') closeModal(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [busy, closeModal]);
+  // Foco atrapado en el diálogo; Escape cierra salvo mientras se procesa el pago
+  useFocusTrap(dialogRef, { onEscape: busy ? undefined : closeModal });
 
   const holderErrors = validateHolder(holder);
   const paymentErrors = payment === 'card' ? validateCard(card) : {};

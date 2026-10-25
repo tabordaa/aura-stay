@@ -1,6 +1,7 @@
 import { Link, NavLink } from 'react-router';
 import { IconBed } from '../../components/Icons';
 import styles from './Reservations.module.css';
+import { APP_NAME } from '../../utils/brand';
 
 export default function ReservationsTopbar() {
   const linkClass = ({ isActive }) => [styles['top-link'], isActive ? styles.active : ''].join(' ');
@@ -8,7 +9,7 @@ export default function ReservationsTopbar() {
   return (
     <nav className={styles.topbar}>
       <Link to="/habitaciones" className={styles['top-brand']}>
-        <IconBed size={20} /> <span className={styles['top-brand-name']}>{import.meta.env.VITE_APP_NAME || 'Aura Stay'}</span>
+        <IconBed size={20} /> <span className={styles['top-brand-name']}>{APP_NAME}</span>
       </Link>
       <div className={styles['top-links']}>
         <NavLink to="/habitaciones" className={linkClass}>Habitaciones</NavLink>

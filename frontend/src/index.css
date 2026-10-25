@@ -83,3 +83,13 @@ input {
   outline: none;
 }
 
+/* Foco visible global para teclado: botones y enlaces no tienen otro indicador */
+button:focus-visible,
+a:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+

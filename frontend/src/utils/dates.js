@@ -38,3 +38,20 @@ export function formatLongDate(iso) {
 export function formatStayRange(checkIn, checkOut) {
   return `${formatStayDate(checkIn)} → ${formatStayDate(checkOut)}`;
 }
+
+// "10 nov" (sin día de la semana; para mensajes en frase)
+export function formatShortDate(iso) {
+  return parseISODate(iso)
+    .toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })
+    .replace(/[.,]/g, '');
+}
+
+// "octubre de 2026" a partir de un ISO con hora (created_at)
+export function formatMonthYear(iso) {
+  return new Date(iso).toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+}
+
+// "sábado, 25 de octubre" para la barra superior del panel
+export function formatLongToday(date = new Date()) {
+  return date.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
+}
