@@ -3,8 +3,10 @@ import { users } from '../mocks/users';
 import { extras } from '../mocks/extras';
 import { roomTypes } from '../mocks/roomTypes';
 import { packages } from '../mocks/packages';
+import { buildReservations } from '../mocks/reservations';
 
-const DB_KEY = 'aura_stay_db_v2';
+// v3: ahora la semilla incluye reservas
+const DB_KEY = 'aura_stay_db_v3';
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sin 0/O/1/I para no confundir
 
 // Simula la latencia de red
@@ -20,7 +22,7 @@ function seed() {
     // Los paquetes comparten colección con los tipos de habitación (category: 'paquete')
     roomTypes: structuredClone([...roomTypes, ...packages]),
     rooms: [],
-    reservations: [],
+    reservations: buildReservations(),
   };
 }
 
