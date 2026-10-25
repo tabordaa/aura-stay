@@ -23,7 +23,7 @@ export function extraLineTotal(extra, qty = 1, nightsCount = 1, guests = 1) {
 export function stayQuote({ roomType, checkIn, checkOut, guests = 1, extras = [] }) {
   const isPackage = roomType.category === 'paquete';
   const n = isPackage ? roomType.nights : nights(checkIn, checkOut);
-  const subtotal = isPackage ? roomType.price_per_night : roomType.price_per_night * n;
+  const subtotal = isPackage ? roomType.price : roomType.price_per_night * n;
   const extras_total = extras.reduce(
     (sum, line) => sum + extraLineTotal(line.extra, line.qty ?? 1, n, guests), 0);
   const taxes = Math.round((subtotal + extras_total) * TAX_RATE);

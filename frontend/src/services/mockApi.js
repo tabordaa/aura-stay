@@ -5,8 +5,8 @@ import { roomTypes } from '../mocks/roomTypes';
 import { packages } from '../mocks/packages';
 import { buildReservations } from '../mocks/reservations';
 
-// v3: ahora la semilla incluye reservas
-const DB_KEY = 'aura_stay_db_v3';
+// v3: la semilla incluye reservas · v4: totales de paquetes corregidos
+const DB_KEY = 'aura_stay_db_v4';
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sin 0/O/1/I para no confundir
 
 // Simula la latencia de red
