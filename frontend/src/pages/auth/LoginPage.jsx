@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
 
   const [searchParams] = useSearchParams();
+  // Aviso para la v2: lo dispara AuthContext cuando el backend responde 401 (hoy no ocurre)
   const sessionExpired = searchParams.get('expired') === '1';
 
   // Redirigir si ya está logueado
@@ -20,6 +21,12 @@ export default function LoginPage() {
     if (user.role === 'admin') return <Navigate to="/admin" replace />;
     return <Navigate to="/habitaciones" replace />;
   }
+
+  const fillDemo = (demoEmail, demoPassword) => {
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    setError('');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -81,6 +88,15 @@ export default function LoginPage() {
             </button>
           </form>
 
+          <div className={styles['demo-note']}>
+            <strong>Cuentas demo</strong>
+            <span className={styles['demo-cred']}>Huésped: huesped@aurastay.com / huesped123</span>
+            <span className={styles['demo-cred']}>Admin: admin@aurastay.com / admin123</span>
+            <div className={styles['demo-actions']}>
+              <button type="button" className={styles['demo-btn']} aria-label="Rellenar con la cuenta demo de huésped" onClick={() => fillDemo('huesped@aurastay.com', 'huesped123')}>Usar huésped</button>
+              <button type="button" className={styles['demo-btn']} aria-label="Rellenar con la cuenta demo de admin" onClick={() => fillDemo('admin@aurastay.com', 'admin123')}>Usar admin</button>
+            </div>
+          </div>
 
           <div className={styles['auth-bottom-link']}>
             ¿No tienes cuenta?{' '}
