@@ -45,20 +45,13 @@ export function AuthProvider({ children }) {
 
     if (userData.role === 'admin') {
       navigate('/admin');
-    } else if (userData.role === 'domiciliario') {
-      navigate('/delivery');
     } else {
-      navigate('/catalog');
+      navigate('/habitaciones');
     }
   };
 
   const login = async (email, password) => {
     const data = await authService.login(email, password);
-    await startSession(data.access_token);
-  };
-
-  const loginWithGoogle = async (credential) => {
-    const data = await authService.loginWithGoogle(credential);
     await startSession(data.access_token);
   };
 
@@ -87,7 +80,7 @@ export function AuthProvider({ children }) {
   if (loading) return <div>Cargando...</div>;
 
   return (
-    <AuthContext.Provider value={{ user, login, loginWithGoogle, register, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, login, register, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

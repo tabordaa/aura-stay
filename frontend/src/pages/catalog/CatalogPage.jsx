@@ -12,7 +12,6 @@ import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../hooks/useCart';
 import { productService } from '../../services/product.service';
 import { orderService } from '../../services/order.service';
-import { configService } from '../../services/config.service';
 import styles from './Catalog.module.css';
 
 const FILTERS = ['Todos', 'Más vendidos', 'Ofertas del día', 'Orgánicos'];
@@ -36,7 +35,6 @@ export default function CatalogPage() {
   const [catalogState, setCatalogState] = useState('loading'); // loading | ready | error
   const [notice, setNotice] = useState('');
   // Lo define el backend; null mientras carga
-  const [deliveryFee, setDeliveryFee] = useState(null);
 
   const { cart, qtyOf, addToCart: addEntry, changeQty, removeFromCart, clearCart } = useCart(user?.id, dbProducts);
 
@@ -55,12 +53,6 @@ export default function CatalogPage() {
 
   const retryCatalog = () => { setCatalogState('loading'); loadProducts(); };
 
-  useEffect(() => {
-    configService.getConfig()
-      .then(config => setDeliveryFee(config.delivery_fee))
-      .catch(() => {});
-  }, []);
-
   // Muestra el aviso de seguimiento si el cliente tiene un pedido en curso
   useEffect(() => {
     orderService.getMyOrders(5)
@@ -73,8 +65,8 @@ export default function CatalogPage() {
 
   const cartCount = cart.reduce((acc, item) => acc + item.qty, 0);
   const cartSubtotal = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
-  const deliveryCost = cartSubtotal > 0 ? deliveryFee : 0;
-  const cartTotal = cartSubtotal + (deliveryCost || 0);
+  const deliveryCost = 0;
+  const cartTotal = cartSubtotal + deliveryCost;
 
   const closeCheckout = useCallback(() => setCheckoutOpen(false), []);
 
@@ -141,7 +133,7 @@ export default function CatalogPage() {
             {/* Welcome Banner */}
             <div className={styles['welcome-banner']}>
               <div className={styles['banner-left']}>
-                <div className={styles['banner-badge']}><IconTruck size={13} /> Domicilio a tu puerta</div>
+                <div className={styles['banner-badge']}><IconTruck size={13} /> Reserva en minutos</div>
                 <h1>¡Hola, {user?.name || 'Invitado'}!<br />¿Qué necesitas hoy?</h1>
                 <p>Encuentra tus alimentos frescos directamente del campo a tu mesa en minutos. Cosecha del día garantizada.</p>
                 <div className={styles['banner-meta']}>

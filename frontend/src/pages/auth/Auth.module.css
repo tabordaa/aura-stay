@@ -198,13 +198,6 @@
 }
 .btn-primary:active { transform: translateY(0); }
 
-/* Botón oficial de Google (lo dibuja Google Identity Services dentro de este contenedor) */
-.google-slot {
-  display: flex;
-  justify-content: center;
-  min-height: 44px;
-}
-
 /* Divider */
 .divider {
   display: flex;

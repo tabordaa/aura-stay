@@ -1,9 +1,9 @@
 // Estados del backend (models.OrderStatus) traducidos para el cliente
 export const ORDER_STEPS = [
-  { status: 'pendiente', label: 'Recibido',  desc: 'La tienda recibió tu pedido',        icon: '📝' },
-  { status: 'preparado', label: 'Preparado', desc: 'Empacamos tus productos frescos',     icon: '🧺' },
-  { status: 'asignado',  label: 'En camino', desc: 'Un domiciliario va hacia tu casa',    icon: '🛵' },
-  { status: 'entregado', label: 'Entregado', desc: 'Tu pedido llegó. ¡Buen provecho!',    icon: '🏠' },
+  { status: 'pendiente', label: 'Recibido',  desc: 'El hotel recibió tu reserva',        icon: '📝' },
+  { status: 'preparado', label: 'Preparado', desc: 'Preparamos tu habitación',     icon: '🧺' },
+  { status: 'asignado',  label: 'En camino', desc: 'Tu estadía está en curso',    icon: '🛵' },
+  { status: 'entregado', label: 'Entregado', desc: 'Gracias por hospedarte con nosotros',    icon: '🏠' },
 ];
 
 export const DELIVERY_MINUTES = 45;
@@ -17,8 +17,8 @@ export { formatOrderId, formatPrice, parseServerDate } from './format';
 
 // Estados finales que no siguen la línea de tiempo normal del pedido
 export const CLOSED_STATUSES = {
-  rechazado: { status: 'rechazado', label: 'Rechazado', desc: 'La tienda no pudo atender tu pedido', icon: '✖️' },
-  cancelado: { status: 'cancelado', label: 'Cancelado', desc: 'Cancelaste este pedido', icon: '🚫' },
+  rechazado: { status: 'rechazado', label: 'Rechazado', desc: 'El hotel no pudo atender tu reserva', icon: '✖️' },
+  cancelado: { status: 'cancelado', label: 'Cancelado', desc: 'Cancelaste esta reserva', icon: '🚫' },
 };
 
 // Un pedido activo todavía puede cambiar de estado (se sigue consultando)
@@ -32,7 +32,7 @@ export function getStatusInfo(status) {
 
 export const PAYMENT_LABELS = {
   card: 'Tarjeta crédito / débito',
-  cash: 'Efectivo al recibir',
+  cash: 'Pagar en el hotel',
 };
 
 // Versiones anteriores guardaban los recibos en el navegador (sin distinguir usuarios): se eliminan

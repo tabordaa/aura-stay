@@ -1,52 +1,19 @@
-import { API_URL, fetchWithAuth, getErrorMessage } from './api';
+import { delay } from './mockApi';
+
+// Hasta S02 no hay sesión: la capa mock de autenticación llega en la siguiente tarea.
+const notReady = async () => {
+  await delay();
+  throw new Error('El inicio de sesión estará disponible muy pronto');
+};
 
 export const authService = {
-  async login(email, password) {
-    // FastAPI OAuth2 espera x-www-form-urlencoded
-    const formData = new URLSearchParams();
-    formData.append('username', email);
-    formData.append('password', password);
+  login: notReady,
+  register: notReady,
+  updateMe: notReady,
 
-    const response = await fetch(`${API_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData.toString()
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(getErrorMessage(errorData.detail, 'Error al iniciar sesión'));
-    }
-
-    return response.json(); // { access_token, token_type }
-  },
-
-  async register(userData) {
-    return fetchWithAuth('/api/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
-  },
-
-  // Intercambia el ID token de Google por la sesión de Aura Food (crea la cuenta de cliente si no existe)
-  async loginWithGoogle(credential) {
-    return fetchWithAuth('/api/auth/google', {
-      method: 'POST',
-      body: JSON.stringify({ credential }),
-    });
-  },
-
+  // Sin sesión guardada no hay usuario
   async getMe() {
-    return fetchWithAuth('/api/auth/me');
-  },
-
-  // Nombre, dirección y teléfono (el correo y el rol no se pueden cambiar)
-  async updateMe(changes) {
-    return fetchWithAuth('/api/auth/me', {
-      method: 'PATCH',
-      body: JSON.stringify(changes),
-    });
+    await delay();
+    return null;
   },
 };

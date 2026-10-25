@@ -34,7 +34,7 @@ export default function MyOrdersPage() {
         <span className={styles['state-icon']}>🛒</span>
         <h2>Aún no tienes pedidos</h2>
         <p>Cuando hagas tu primera compra la verás aquí.</p>
-        <Link to="/catalog" className={styles['btn-primary']}>Ir a la tienda</Link>
+        <Link to="/habitaciones" className={styles['btn-primary']}>Ir a la tienda</Link>
       </div>
     );
   } else {
@@ -44,7 +44,7 @@ export default function MyOrdersPage() {
           const step = getStatusInfo(o.status);
           const count = o.items.reduce((acc, i) => acc + i.quantity, 0);
           return (
-            <Link key={o.id} to={`/pedidos/${o.id}`} className={styles['order-row']}>
+            <Link key={o.id} to={`/reservas/${o.id}`} className={styles['order-row']}>
               <span className={styles['order-thumbs']}>
                 {o.items.slice(0, 3).map(i => (i.product_image_url
                   ? <img key={i.id} src={i.product_image_url} alt="" />

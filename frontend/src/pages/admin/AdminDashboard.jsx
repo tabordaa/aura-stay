@@ -45,11 +45,6 @@ function describeItems(items) {
   return { names: names.join(', '), units };
 }
 
-// Quién lleva el pedido (o si todavía espera domiciliario)
-function courierNote(order) {
-  if (order.courier) return `🛵 ${order.courier.name}`;
-  return order.status === 'preparado' ? 'Esperando domiciliario' : '—';
-}
 
 export default function AdminDashboard() {
   const [orders, setOrders] = useState([]);
@@ -137,7 +132,7 @@ export default function AdminDashboard() {
     if (!term) return true;
     return formatOrderId(o.id).includes(term)
       || String(o.id) === term
-      || o.delivery_address.toLowerCase().includes(term)
+      || o.address.toLowerCase().includes(term)
       || (o.customer?.name ?? '').toLowerCase().includes(term)
       || describeItems(o.items).names.toLowerCase().includes(term);
   });
@@ -182,7 +177,7 @@ export default function AdminDashboard() {
             <div className={styles.kpi}>
               <div className={styles['kpi-head']}><span>Ingresos de hoy</span><i>💵</i></div>
               <p className={styles['kpi-value']}>{formatPrice(stats?.today_revenue ?? 0)}</p>
-              <span className={styles['kpi-foot']}>{todayCount} pedido{todayCount !== 1 ? 's' : ''} hoy · incluye domicilio</span>
+              <span className={styles['kpi-foot']}>{todayCount} pedido{todayCount !== 1 ? 's' : ''} hoy · incluye servicios</span>
             </div>
             <div className={styles.kpi}>
               <div className={styles['kpi-head']}><span>En curso</span><i>🛵</i></div>
@@ -263,7 +258,7 @@ export default function AdminDashboard() {
                               <strong>{order.customer?.name ?? `Cliente #${order.user_id}`}</strong>
                               <div className={[styles.address, styles.muted].join(' ')}>
                                 <IconMapPin size={13} />
-                                <span>{order.delivery_address}</span>
+                                <span>{order.address}</span>
                               </div>
                             </div>
                           </div>
@@ -281,7 +276,7 @@ export default function AdminDashboard() {
                         </td>
                         <td className={styles['col-actions']}>
                           {order.status !== 'pendiente' ? (
-                            <span className={styles.muted}>{courierNote(order)}</span>
+                            <span className={styles.muted}>—</span>
                           ) : confirmRejectId === order.id ? (
                             <form
                               className={styles.confirm}

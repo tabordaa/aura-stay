@@ -1,5 +1,5 @@
 {
-  "name": "aura-food",
+  "name": "aura-stay",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "leaflet": "1.9.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router": "^7.18.4"
