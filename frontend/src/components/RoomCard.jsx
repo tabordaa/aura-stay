@@ -21,7 +21,8 @@ export default function RoomCard({ room, favorites, toggleFav, onSelect, stay, a
 
   return (
     <div className={[styles['product-card'], unavailable ? styles.unavailable : ''].join(' ')}>
-      <div className={styles['card-image-area']}>
+      {/* La imagen abre el detalle con el mouse; el teclado usa "Ver detalles" */}
+      <div className={styles['card-image-area']} onClick={() => onSelect?.(room)}>
         {unavailable && <span className={styles['card-unavailable']}>Sin disponibilidad</span>}
         {room.tag && !unavailable && (
           <span className={[styles['card-tag'], room.old_price ? styles['tag-deal'] : ''].join(' ')}>
@@ -43,7 +44,7 @@ export default function RoomCard({ room, favorites, toggleFav, onSelect, stay, a
         )}
         <button
           className={[styles['card-fav'], isFav ? styles.active : ''].join(' ')}
-          onClick={() => toggleFav(room.id)}
+          onClick={(e) => { e.stopPropagation(); toggleFav(room.id); }}
           aria-pressed={isFav}
           aria-label={`Guardar ${room.name} en favoritos`}
         >
@@ -71,12 +72,10 @@ export default function RoomCard({ room, favorites, toggleFav, onSelect, stay, a
           {room.old_price && <span className={styles['card-price-old']}>{formatPrice(room.old_price)}</span>}
           <span className={styles['card-price']}>{formatPrice(price)}</span>
         </div>
-        {/* Sin onSelect no hay detalle todavía (S05) */}
         <button
           className={styles['btn-add']}
           onClick={() => onSelect?.(room)}
           disabled={!onSelect}
-          title={onSelect ? undefined : 'Disponible pronto'}
         >
           Ver detalles <IconArrowRight size={13} />
         </button>

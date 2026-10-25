@@ -5,6 +5,7 @@ import Navbar from '../../components/Navbar';
 import RoomCard from '../../components/RoomCard';
 import CartDrawer from '../../components/CartDrawer';
 import CheckoutModal from '../../components/CheckoutModal';
+import RoomDetailModal from '../../components/RoomDetailModal';
 import ActiveOrderBanner from '../../components/ActiveOrderBanner';
 import StaySearchBar from '../../components/StaySearchBar';
 import { activeStay, readStay } from '../../utils/stay';
@@ -42,6 +43,7 @@ export default function CatalogPage() {
   const [catalogState, setCatalogState] = useState('loading'); // loading | ready | error
   const [retryKey, setRetryKey] = useState(0);
   const [notice, setNotice] = useState('');
+  const [selectedRoom, setSelectedRoom] = useState(null);
   const [availability, setAvailability] = useState({ key: '', map: null });
 
   // La estadía vive en la URL (?in=&out=&guests=); si es inválida no se aplica la disponibilidad
@@ -109,6 +111,12 @@ export default function CatalogPage() {
   const cartTotal = cartSubtotal + deliveryCost;
 
   const closeCheckout = useCallback(() => setCheckoutOpen(false), []);
+  const closeDetail = useCallback(() => setSelectedRoom(null), []);
+  // Temporal hasta S06 ("Mi estadía"): cierra el detalle y avisa
+  const handleAddStay = useCallback(() => {
+    setSelectedRoom(null);
+    setNotice('Pronto podrás completar tu reserva desde Mi estadía.');
+  }, []);
 
   const toggleFav = (id) => setFavorites(f => f.includes(id) ? f.filter(x => x !== id) : [...f, id]);
   const setFilter = (key) => (e) => setFilters(f => ({ ...f, [key]: e.target.value }));
@@ -249,6 +257,7 @@ export default function CatalogPage() {
                     toggleFav={toggleFav}
                     stay={availabilityMap ? stay : null}
                     availability={availabilityMap?.[room.id]}
+                    onSelect={setSelectedRoom}
                   />
                 ))}
               </div>
@@ -256,6 +265,17 @@ export default function CatalogPage() {
           </main>
         </div>
       </div>
+
+      {selectedRoom && (
+        <RoomDetailModal
+          key={selectedRoom.id}
+          room={selectedRoom}
+          stay={stay}
+          availability={availabilityMap?.[selectedRoom.id]}
+          onClose={closeDetail}
+          onAdd={handleAddStay}
+        />
+      )}
 
       <CartDrawer
         cartOpen={cartOpen}
