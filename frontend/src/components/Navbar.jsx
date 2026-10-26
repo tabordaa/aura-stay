@@ -1,7 +1,8 @@
 import { useAuth } from '../hooks/useAuth';
-import { IconBed, IconCart, IconSearch, IconCalendar, IconLogout } from './Icons';
+import { IconBed, IconSearch, IconCalendar, IconLogout } from './Icons';
 import { initials } from '../utils/format';
 import styles from '../pages/catalog/Catalog.module.css';
+import { APP_NAME } from '../utils/brand';
 
 // `hideSearch` oculta el buscador (home pública). Sin sesión se ofrecen entrar/registrarse;
 // el admin ve un enlace al panel en lugar de las acciones del huésped.
@@ -12,7 +13,7 @@ export default function Navbar({ search = '', setSearch, cartCount = 0, setCartO
   return (
     <nav className={styles['navbar']} aria-label="Principal">
       <div className={styles['brand']}>
-        <IconBed size={22} /> {import.meta.env.VITE_APP_NAME || 'Aura Stay'}
+        <IconBed size={22} /> {APP_NAME}
       </div>
       {!hideSearch && (
         <div className={styles['navbar-search']}>
@@ -43,13 +44,13 @@ export default function Navbar({ search = '', setSearch, cartCount = 0, setCartO
                 </button>
                 {setCartOpen ? (
                   <button className={styles['cart-btn']} aria-label="Mi estadía" title="Mi estadía" onClick={() => setCartOpen(true)}>
-                    <IconCart size={22} />
+                    <IconBed size={22} />
                     {cartCount > 0 && <span className={styles['cart-badge']}>{cartCount}</span>}
                   </button>
                 ) : (
                   // Fuera del catálogo el drawer no existe: se va a donde está "Mi estadía"
                   <button className={styles['cart-btn']} aria-label="Mi estadía" title="Mi estadía" onClick={() => navigate('/habitaciones')}>
-                    <IconCart size={22} />
+                    <IconBed size={22} />
                   </button>
                 )}
                 <button className={styles['user-btn']} onClick={() => navigate('/perfil')} title="Mi perfil" aria-label="Mi perfil">

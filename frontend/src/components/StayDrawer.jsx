@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import useFocusTrap from '../hooks/useFocusTrap';
 import { MAX_EXTRA_QTY } from '../hooks/useStay';
 import { formatPrice } from '../utils/format';
 import { formatStayDate, todayISO } from '../utils/dates';
@@ -13,25 +14,13 @@ export default function StayDrawer({ open, onClose, stay, notice, onReserve }) {
   const closeRef = useRef(null);
   const { recheck } = stay;
 
-  // Foco inicial en "Cerrar", devolución al abrir/cerrar y reintento de disponibilidad al abrir
-  useEffect(() => {
-    if (!open) return undefined;
-    const previous = document.activeElement;
-    closeRef.current?.focus();
-    recheck();
-    // Si se cerró para abrir otro diálogo (checkout), no le robamos el foco
-    return () => {
-      if (!document.querySelector('[role="dialog"][aria-modal="true"]')) previous?.focus?.();
-    };
-  }, [open, recheck]);
+  const dialogRef = useRef(null);
+  useFocusTrap(dialogRef, { active: open, initialFocusRef: closeRef, onEscape: onClose });
 
-  // Cierra con Escape
+  // Reintento de disponibilidad al abrir
   useEffect(() => {
-    if (!open) return undefined;
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+    if (open) recheck();
+  }, [open, recheck]);
 
   if (!open) return null;
 
@@ -39,7 +28,7 @@ export default function StayDrawer({ open, onClose, stay, notice, onReserve }) {
 
   return (
     <div className={styles['cart-overlay']} onClick={onClose}>
-      <div className={styles['cart-drawer']} role="dialog" aria-modal="true" aria-label="Mi estadía" onClick={e => e.stopPropagation()}>
+      <div className={styles['cart-drawer']} ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Mi estadía" onClick={e => e.stopPropagation()}>
 
         <div className={styles['cart-drawer-header']}>
           <div>

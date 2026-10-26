@@ -33,7 +33,7 @@
   max-width: 100%;
   max-height: calc(100vh - 32px);
   overflow-y: auto;
-  background: #fff;
+  background: var(--card-bg);
   border-radius: var(--radius-lg);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
   animation: popIn 0.25s ease;
@@ -64,12 +64,12 @@
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--primary);
-  background: #fff;
+  background: var(--card-bg);
   padding: 5px 10px;
   border-radius: var(--radius-xl);
 }
 .close-btn {
-  background: #fff;
+  background: var(--card-bg);
   border: 1.5px solid var(--border);
   border-radius: 50%;
   width: 32px; height: 32px;
@@ -113,7 +113,7 @@
   width: 24px; height: 24px;
   border-radius: 50%;
   border: 1.5px solid var(--border);
-  background: #fff;
+  background: var(--card-bg);
   display: flex; align-items: center; justify-content: center;
   font-size: 0.72rem;
   flex-shrink: 0;
@@ -228,14 +228,14 @@
 .input::placeholder { color: var(--text-muted); }
 .input:focus {
   outline: none;
-  background: #fff;
+  background: var(--card-bg);
   border-color: var(--input-focus);
   box-shadow: 0 0 0 3px rgba(27, 94, 53, 0.1);
 }
 .input:disabled { opacity: 0.7; }
 .input.with-icon { padding-left: 40px; }
 .input.input-error {
-  border-color: #d93025;
+  border-color: var(--error-strong);
   background: #fffafa;
 }
 .input.input-error:focus { box-shadow: 0 0 0 3px rgba(217, 48, 37, 0.12); }
@@ -308,7 +308,7 @@
 .pay-icon {
   width: 38px; height: 38px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--card-bg);
   display: flex; align-items: center; justify-content: center;
   font-size: 1.15rem;
 }
@@ -318,7 +318,7 @@
   width: 20px; height: 20px;
   border-radius: 50%;
   border: 1.5px solid var(--border);
-  background: #fff;
+  background: var(--card-bg);
   display: flex; align-items: center; justify-content: center;
   color: #fff;
 }
@@ -458,7 +458,7 @@
   background: repeating-linear-gradient(-45deg, #f3f3f3, #f3f3f3 6px, #e2e2e2 6px, #e2e2e2 12px);
 }
 .card-sign strong {
-  background: #fff;
+  background: var(--card-bg);
   color: #111;
   font-family: 'SFMono-Regular', Consolas, monospace;
   font-size: 0.85rem;
@@ -551,7 +551,7 @@
   color: var(--text-primary);
 }
 .pill {
-  background: #fff;
+  background: var(--card-bg);
   color: var(--primary);
   font-size: 0.75rem;
   font-weight: 600;
@@ -571,7 +571,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #fff;
+  background: var(--card-bg);
   border-radius: var(--radius-sm);
   padding: 8px 10px;
 }
@@ -727,7 +727,7 @@
 .tracking li span {
   width: 14px; height: 14px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--card-bg);
   border: 2px solid var(--border);
 }
 .tracking li.active { color: var(--primary); }

@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
+import useFocusTrap from '../../hooks/useFocusTrap';
 import { REASON_MAX, REASON_MIN } from '../../utils/reservations';
 import styles from './Admin.module.css';
 
@@ -11,17 +12,8 @@ export default function RejectReservationModal({ reservation, busy, error, onCon
   const inputId = useId();
   const errorId = useId();
 
-  useEffect(() => {
-    const previous = document.activeElement;
-    fieldRef.current?.focus();
-    return () => previous?.focus?.();
-  }, []);
-
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape' && !busy) onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose, busy]);
+  const dialogRef = useRef(null);
+  useFocusTrap(dialogRef, { initialFocusRef: fieldRef, onEscape: busy ? undefined : onClose });
 
   const length = reason.trim().length;
   const invalid = length < REASON_MIN || length > REASON_MAX;
@@ -35,7 +27,7 @@ export default function RejectReservationModal({ reservation, busy, error, onCon
 
   return (
     <div className={styles['modal-overlay']} onClick={e => { if (e.target === e.currentTarget && !busy) onClose(); }}>
-      <form className={styles.modal} role="dialog" aria-modal="true" aria-labelledby={titleId} onSubmit={submit} noValidate>
+      <form className={styles.modal} ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={titleId} onSubmit={submit} noValidate>
         <div className={styles['modal-head']}>
           <div>
             <h2 id={titleId}>Rechazar reserva</h2>

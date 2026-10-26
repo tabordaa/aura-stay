@@ -1,4 +1,4 @@
-import { delay, loadDb, newId, saveDb } from './mockApi';
+import { delay, loadDb, newId, resetDemoData, saveDb } from './mockApi';
 import { getSessionUserId } from './auth.service';
 import { todayISO } from '../utils/dates';
 import { validateRoomType } from '../utils/validation';
@@ -279,6 +279,13 @@ export const adminService = {
       .filter((u) => u.role === 'huesped')
       .map((u) => publicGuest(u, db.reservations.filter((r) => r.user_id === u.id), today))
       .sort((a, b) => b.total_spent - a.total_spent || a.name.localeCompare(b.name));
+  },
+
+  // Restaura la semilla de la demo (reservas, habitaciones, huéspedes y estadías guardadas)
+  async resetDemo() {
+    await delay();
+    requireAdmin(loadDb());
+    resetDemoData();
   },
 
   // Detalle con historial completo (incluye canceladas/rechazadas), más reciente primero

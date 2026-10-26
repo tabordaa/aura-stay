@@ -57,6 +57,7 @@ export default function AdminRooms() {
     .finally(() => setLoading(false)), []);
 
   useEffect(() => { load(); }, [load]);
+  const retryLoad = () => { setLoading(true); load(); };
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -213,7 +214,7 @@ export default function AdminRooms() {
                     {loading && rooms.length === 0 ? (
                       <tr><td colSpan={4} className={styles.empty}>Cargando habitaciones…</td></tr>
                     ) : floors.length === 0 ? (
-                      <tr><td colSpan={4} className={styles.empty}>No hay habitaciones que coincidan.</td></tr>
+                      <tr><td colSpan={4} className={styles.empty}>{!online && rooms.length === 0 ? <>📡 No pudimos cargar las habitaciones. <button type="button" className={styles['btn-ghost']} onClick={retryLoad}>Reintentar</button></> : 'No hay habitaciones que coincidan.'}</td></tr>
                     ) : floors.map(([floor, list]) => (
                       <Fragment key={floor}>
                         <tr className={styles['floor-row']}><td colSpan={4}>Piso {floor}</td></tr>
@@ -259,7 +260,7 @@ export default function AdminRooms() {
                   {loading && types.length === 0 ? (
                     <tr><td colSpan={7} className={styles.empty}>Cargando catálogo…</td></tr>
                   ) : visibleTypes.length === 0 ? (
-                    <tr><td colSpan={7} className={styles.empty}>No hay resultados que coincidan.</td></tr>
+                    <tr><td colSpan={7} className={styles.empty}>{!online && types.length === 0 ? <>📡 No pudimos cargar el catálogo. <button type="button" className={styles['btn-ghost']} onClick={retryLoad}>Reintentar</button></> : 'No hay resultados que coincidan.'}</td></tr>
                   ) : visibleTypes.map((item) => {
                     const busy = busyIds.has(item.id);
                     return (

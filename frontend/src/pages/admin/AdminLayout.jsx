@@ -1,13 +1,13 @@
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../hooks/useAuth';
 import { IconSearch } from '../../components/Icons';
+import { formatLongToday } from '../../utils/dates';
 import styles from './Admin.module.css';
 
 const NAV = [
   { id: 'panel',    icon: '🧾', label: 'Panel', path: '/admin' },
   { id: 'rooms',    icon: '🛏️', label: 'Habitaciones', path: '/admin/habitaciones' },
   { id: 'guests',   icon: '👥', label: 'Huéspedes', path: '/admin/huespedes' },
-  { id: 'settings', icon: '⚙️', label: 'Configuración' },
 ];
 
 // Estructura común del panel: barra lateral, barra superior con buscador y contenido de la sección
@@ -67,7 +67,7 @@ export default function AdminLayout({ active, pendingCount = 0, search, onSearch
             {online ? 'Hotel en línea' : 'Sin conexión con el servidor'}
           </span>
           <span className={styles.today}>
-            📅 {now.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}
+            📅 {formatLongToday(now)}
           </span>
         </header>
 

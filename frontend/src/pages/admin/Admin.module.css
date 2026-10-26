@@ -19,7 +19,7 @@
   position: sticky;
   top: 0;
   height: 100vh;
-  background: #fff;
+  background: var(--card-bg);
   border-right: 1px solid var(--border);
   padding: 22px 16px;
   display: flex;
@@ -84,7 +84,7 @@
 }
 .nav-badge {
   margin-left: auto;
-  background: #d93025;
+  background: var(--error-strong);
   color: #fff;
   font-size: 0.7rem;
   min-width: 20px;
@@ -122,7 +122,7 @@
   padding: 4px 6px;
   border-radius: var(--radius-sm);
 }
-.logout:hover { background: #fff; color: #d93025; }
+.logout:hover { background: var(--card-bg); color: var(--error-strong); }
 
 /* ---------- Main ---------- */
 .main { min-width: 0; display: flex; flex-direction: column; }
@@ -180,8 +180,8 @@
   border-radius: 50%;
   background: #2ecc71;
 }
-.connection.offline { background: #fff0f0; color: #b3261e; }
-.connection.offline .connection-dot { background: #d93025; }
+.connection.offline { background: var(--error-bg); color: var(--error); }
+.connection.offline .connection-dot { background: var(--error-strong); }
 .today {
   font-size: 0.84rem;
   font-weight: 600;
@@ -239,7 +239,7 @@
   gap: 16px;
 }
 .kpi {
-  background: #fff;
+  background: var(--card-bg);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 18px 20px;
@@ -282,11 +282,11 @@
   background: var(--primary-light);
   color: var(--primary);
 }
-.chip-alert { background: #fde8e7; color: #b3261e; }
+.chip-alert { background: var(--error-bg); color: var(--error); }
 
 /* ---------- Panel / tabs ---------- */
 .panel {
-  background: #fff;
+  background: var(--card-bg);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 18px;
@@ -317,7 +317,7 @@
 .tab.active { background: var(--primary); color: #fff; }
 .tab-count { font-weight: 500; opacity: 0.8; }
 .tab-alert {
-  background: #d93025;
+  background: var(--error-strong);
   color: #fff;
   font-size: 0.7rem;
   min-width: 19px;
@@ -363,6 +363,7 @@
 }
 
 .muted { font-size: 0.76rem; color: var(--text-muted); }
+.empty .btn-ghost { margin-left: 8px; }
 
 .client-avatar {
   width: 36px; height: 36px;
@@ -413,7 +414,7 @@
 
 .col-actions { width: 210px; }
 .actions, .confirm { display: flex; align-items: center; gap: 8px; }
-.confirm span { font-size: 0.8rem; font-weight: 600; color: #b3261e; }
+.confirm span { font-size: 0.8rem; font-weight: 600; color: var(--error); }
 .btn-accept, .btn-reject, .btn-danger, .btn-ghost {
   display: inline-flex;
   align-items: center;
@@ -427,10 +428,10 @@
 }
 .btn-accept { background: var(--primary); color: #fff; }
 .btn-accept:hover:not(:disabled) { background: var(--primary-hover); }
-.btn-reject { background: #fff; color: #b3261e; border: 1.5px solid #f2b8b5; }
-.btn-reject:hover:not(:disabled) { background: #fff0f0; border-color: #d93025; }
-.btn-danger { background: #d93025; color: #fff; }
-.btn-danger:hover:not(:disabled) { background: #b3261e; }
+.btn-reject { background: var(--card-bg); color: var(--error); border: 1.5px solid var(--error-border); }
+.btn-reject:hover:not(:disabled) { background: var(--error-bg); border-color: var(--error-strong); }
+.btn-danger { background: var(--error-strong); color: #fff; }
+.btn-danger:hover:not(:disabled) { background: var(--error); }
 .btn-ghost { background: none; color: var(--text-secondary); border: 1.5px solid var(--border); }
 .btn-ghost:hover:not(:disabled) { background: var(--input-bg); }
 .actions button:disabled, .confirm button:disabled { opacity: 0.6; cursor: progress; }
@@ -458,7 +459,7 @@ form.confirm { flex-wrap: wrap; }
 }
 .toast-success { background: var(--primary); }
 .toast-warning { background: #5c6e5c; }
-.toast-error   { background: #b3261e; }
+.toast-error   { background: var(--error); }
 
 /* =========================================
    HABITACIONES (tipos, paquetes y habitaciones físicas)
@@ -504,7 +505,7 @@ form.confirm { flex-wrap: wrap; }
   max-width: 100%;
   max-height: calc(100vh - 32px);
   overflow-y: auto;
-  background: #fff;
+  background: var(--card-bg);
   border-radius: var(--radius-lg);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
   animation: modalIn 0.25s ease;
@@ -523,7 +524,7 @@ form.confirm { flex-wrap: wrap; }
 .modal-close {
   width: 34px; height: 34px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--card-bg);
   color: var(--text-secondary);
   border: 1.5px solid var(--border);
   flex-shrink: 0;
@@ -562,7 +563,7 @@ form.confirm { flex-wrap: wrap; }
 .input::placeholder { color: var(--text-muted); }
 .input:focus {
   outline: none;
-  background: #fff;
+  background: var(--card-bg);
   border-color: var(--input-focus);
   box-shadow: 0 0 0 3px rgba(27, 94, 53, 0.1);
 }
@@ -571,9 +572,9 @@ form.confirm { flex-wrap: wrap; }
 .form-error {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #b3261e;
-  background: #fff0f0;
-  border: 1px solid #f2b8b5;
+  color: var(--error);
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
 }
@@ -593,6 +594,7 @@ form.confirm { flex-wrap: wrap; }
 .client-btn:hover strong { color: var(--primary); }
 .client-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: var(--radius-sm); }
 .modal-wide { width: 820px; }
+.modal-narrow { width: 460px; }
 .guest-info { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 20px; }
 .guest-info dt { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); }
 .guest-info dd { font-size: 0.9rem; color: var(--text-primary); overflow-wrap: anywhere; }
@@ -612,6 +614,12 @@ form.confirm { flex-wrap: wrap; }
 }
 
 .client-btn strong { color: var(--text-primary); font-size: 0.9rem; }
+/* Contacto compacto: el correo se parte en vez de ensanchar la tabla */
+.contact-cell { max-width: 200px; }
+.contact-cell .muted { overflow-wrap: anywhere; }
+@media (max-width: 860px) {
+  .client-btn { white-space: normal; }
+}
 .block { display: block; }
 .kpi-name {
   font-size: 1.35rem;
@@ -675,6 +683,10 @@ form.confirm { flex-wrap: wrap; }
 }
 
 @media (max-width: 560px) {
+  /* A 360 px el nav se reparte en varias líneas en vez de cortarse */
+  .nav { flex-wrap: wrap; overflow-x: visible; }
+  .nav-item { flex: 1 1 auto; justify-content: center; padding: 9px 10px; }
+  .refresh-group { flex-wrap: wrap; }
   .kpis { grid-template-columns: 1fr; }
   .connection { display: none; }
   .page-head h1 { font-size: 1.5rem; }

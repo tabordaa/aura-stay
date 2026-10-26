@@ -4,6 +4,7 @@ import { landingFor } from '../../utils/redirect';
 import { useAuth } from '../../hooks/useAuth';
 import { IconBed, IconMail, IconLock, IconEye, IconEyeOff, IconArrowRight, IconShield } from '../../components/Icons';
 import styles from './Auth.module.css';
+import { APP_NAME } from '../../utils/brand';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ export default function LoginPage() {
       <div className={styles['auth-topbar']}>
         <div className={styles['brand']}>
           <IconBed size={22} />
-          {import.meta.env.VITE_APP_NAME || 'Aura Stay'}
+          {APP_NAME}
         </div>
       </div>
 
@@ -51,7 +52,7 @@ export default function LoginPage() {
           <div className={styles['card-brand']}>
             <div className={[styles.brand, styles['brand-lg']].join(' ')}>
               <IconBed size={26} />
-              {import.meta.env.VITE_APP_NAME || 'Aura Stay'}
+              {APP_NAME}
             </div>
             <p className={styles['subtitle']}>Bienvenido de nuevo</p>
           </div>

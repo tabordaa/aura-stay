@@ -1,7 +1,8 @@
 import { useId, useState } from 'react';
 import { IconMail, IconMapPin, IconPhone, IconUser, IconShield } from '../../components/Icons';
 import { useAuth } from '../../hooks/useAuth';
-import { initials, parseServerDate } from '../../utils/format';
+import { formatMonthYear } from '../../utils/dates';
+import { initials } from '../../utils/format';
 import { normalizePhone, validateProfile } from '../../utils/validation';
 import ReservationsTopbar from '../reservations/ReservationsTopbar';
 import styles from './Profile.module.css';
@@ -54,7 +55,7 @@ export default function ProfilePage() {
   }
 
   const memberSince = user?.created_at
-    ? parseServerDate(user.created_at).toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })
+    ? formatMonthYear(user.created_at)
     : null;
 
   return (

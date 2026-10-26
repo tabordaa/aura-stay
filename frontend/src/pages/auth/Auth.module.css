@@ -79,8 +79,8 @@
   font-size: 0.875rem;
   font-weight: 500;
 }
-.form-error { background: #fff0f0; color: #b3261e; border: 1px solid #f2b8b5; }
-.form-notice { background: #FFF3CD; color: #856404; }
+.form-error { background: var(--error-bg); color: var(--error); border: 1px solid var(--error-border); }
+.form-notice { background: var(--warning-bg); color: var(--warning); }
 
 /* Auth card brand */
 .card-brand {
@@ -146,7 +146,7 @@
 .input-wrapper input:focus {
   border-color: var(--input-focus);
   box-shadow: 0 0 0 3px rgba(27,94,53,0.1);
-  background: #fff;
+  background: var(--card-bg);
 }
 
 .input-wrapper input::-ms-reveal,
