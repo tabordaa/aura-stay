@@ -3,7 +3,7 @@
    ========================================= */
 .catalog-page {
   min-height: 100vh;
-  background: #F7FCF7;
+  background: var(--page-bg);
   display: flex;
   flex-direction: column;
 }
@@ -42,7 +42,7 @@
 }
 .navbar-search input:focus {
   border-color: var(--input-focus);
-  box-shadow: 0 0 0 3px rgba(27,94,53,0.1);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
 }
 .navbar-search .search-icon {
   position: absolute;
@@ -122,7 +122,7 @@
 
 /* Welcome Banner */
 .welcome-banner {
-  background: linear-gradient(120deg, #DFF0E4 0%, #C5E3CE 100%);
+  background: linear-gradient(120deg, var(--primary-soft-start) 0%, var(--primary-soft-end) 100%);
   border-radius: var(--radius-lg);
   padding: 28px 36px;
   display: flex;
@@ -266,7 +266,7 @@
   flex-direction: column;
 }
 .product-card:hover {
-  box-shadow: 0 6px 20px rgba(27,94,53,0.1);
+  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.1);
   transform: translateY(-2px);
 }
 
@@ -678,9 +678,9 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes bannerPulse {
-  0%   { box-shadow: 0 0 0 0 rgba(27, 94, 53, 0.35); }
-  70%  { box-shadow: 0 0 0 10px rgba(27, 94, 53, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(27, 94, 53, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.35); }
+  70%  { box-shadow: 0 0 0 10px rgba(var(--primary-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0); }
 }
 
 .order-banner {
@@ -693,13 +693,13 @@
   padding: 14px 20px;
   margin-bottom: 20px;
   color: inherit;
-  box-shadow: 0 6px 20px rgba(27, 94, 53, 0.1);
+  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.1);
   animation: bannerIn 0.3s ease;
   transition: transform var(--transition), box-shadow var(--transition);
 }
 .order-banner:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 26px rgba(27, 94, 53, 0.16);
+  box-shadow: 0 10px 26px rgba(var(--primary-rgb), 0.16);
 }
 .order-banner-icon {
   width: 46px; height: 46px;
@@ -881,7 +881,7 @@
 .filter-field input:focus,
 .filter-field select:focus {
   border-color: var(--input-focus);
-  box-shadow: 0 0 0 3px rgba(27,94,53,0.1);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
 }
 .filters-bar .btn-secondary { padding: 8px 18px; }
 .filter-error {
