@@ -3,7 +3,7 @@
    ========================================= */
 .page {
   min-height: 100vh;
-  background: #F7FCF7;
+  background: var(--page-bg);
 }
 
 @keyframes fadeUp {
@@ -11,9 +11,9 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(27, 94, 53, 0.35); }
-  70%  { box-shadow: 0 0 0 12px rgba(27, 94, 53, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(27, 94, 53, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.35); }
+  70%  { box-shadow: 0 0 0 12px rgba(var(--primary-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0); }
 }
 @keyframes spin {
   to { transform: rotate(360deg); }
@@ -115,7 +115,7 @@
 
 /* Hero (estado actual) */
 .hero {
-  background: linear-gradient(120deg, #DFF0E4 0%, #C5E3CE 100%);
+  background: linear-gradient(120deg, var(--primary-soft-start) 0%, var(--primary-soft-end) 100%);
   border-radius: var(--radius-lg);
   padding: 26px 30px;
   display: flex;
@@ -152,9 +152,9 @@
 }
 .hero.delivered .hero-icon { animation: none; }
 /* Reserva rechazada o cancelada: mismo tono neutro que el estado "Rechazado" del panel admin */
-.hero.closed { background: linear-gradient(120deg, #F1F4F1 0%, #E4E9E4 100%); }
+.hero.closed { background: linear-gradient(120deg, var(--neutral-soft-start) 0%, var(--neutral-soft-end) 100%); }
 .hero.closed .hero-icon { animation: none; }
-.hero.closed .hero-status h1 { color: #4F5B4F; }
+.hero.closed .hero-status h1 { color: var(--neutral-strong); }
 .hero-status h1 {
   font-size: 1.9rem;
   font-weight: 800;
@@ -170,7 +170,7 @@
   text-align: center;
   min-width: 170px;
   z-index: 1;
-  box-shadow: 0 6px 18px rgba(27, 94, 53, 0.12);
+  box-shadow: 0 6px 18px rgba(var(--primary-rgb), 0.12);
 }
 .eta small {
   display: block;
@@ -361,7 +361,7 @@
 }
 .order-row:hover {
   border-color: var(--primary-mid);
-  box-shadow: 0 6px 20px rgba(27, 94, 53, 0.1);
+  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.1);
   transform: translateY(-1px);
 }
 .order-thumbs {
@@ -408,14 +408,14 @@
   border-radius: var(--radius-md);
   padding: 14px 18px;
   font-size: 0.9rem;
-  color: #4F5B4F;
+  color: var(--neutral-strong);
 }
 
 /* Modal de confirmación */
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 30, 18, 0.45);
+  background: rgba(var(--shade-rgb), 0.45);
   backdrop-filter: blur(3px);
   z-index: 300;
   display: flex;

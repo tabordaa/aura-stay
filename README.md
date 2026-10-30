@@ -43,7 +43,12 @@ npm run build    # build de producción en dist/
 npm run preview  # sirve el build
 ```
 
-Variables de entorno opcionales: ver `frontend/.env.example` (`VITE_APP_NAME`).
+Variables de entorno opcionales: ver `frontend/.env.example` (`VITE_APP_NAME`, `VITE_THEME`).
+
+### Tema de color
+La app trae dos temas: `wine` (vinotinto, por defecto) y `green` (el verde original). Para cambiarlo basta con
+editar `THEME` en `frontend/src/utils/brand.js` o definir `VITE_THEME=green` en `frontend/.env`. Los colores de
+cada tema viven solo en `frontend/src/index.css` (bloques `[data-theme="..."]`): cambiar uno ahí lo cambia en toda la app.
 
 ## Cuentas de demostración
 Las contraseñas son públicas a propósito: no hay backend y los datos son ficticios.
