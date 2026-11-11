@@ -3,27 +3,10 @@
 /* =========================================
    DESIGN TOKENS
    ========================================= */
+/* Tokens comunes a todos los temas: formas, layout y colores semánticos de error/advertencia */
 :root {
-  --primary:        #1B5E35;
-  --primary-hover:  #14472A;
-  --primary-light:  #E8F5EE;
-  --primary-mid:    #3D9970;
-
-  --bg-gradient-start: #EBF5EB;
-  --bg-gradient-end:   #F4FAF4;
-
   --card-bg:        #FFFFFF;
   --card-shadow:    0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
-
-  --text-primary:   #1A2B1A;
-  --text-secondary: #5C6E5C;
-  --text-muted:     #8FA08F;
-  --text-link:      #1B5E35;
-
-  --border:         #D6E9D6;
-  --input-bg:       #F8FCF8;
-  --input-border:   #C8DFC8;
-  --input-focus:    #1B5E35;
 
   --sidebar-w:      200px;
   --navbar-h:       60px;
@@ -40,8 +23,85 @@
   --error-border: #f2b8b5;
   --warning-bg: #FFF3CD;
   --warning: #856404;
+}
+
+/* =========================================
+   TEMAS DE COLOR
+   El tema activo se elige en src/utils/brand.js (THEME) o con VITE_THEME.
+   Para cambiar un color basta con editarlo aquí: ningún módulo CSS usa colores de marca sueltos.
+   ========================================= */
+
+/* Vinotinto (tema por defecto) */
+:root,
+:root[data-theme="wine"] {
+  --primary:        #7B1E3A;
+  --primary-hover:  #5E1529;
+  --primary-light:  #F8ECEF;
+  --primary-mid:    #A94A64;
+  --primary-rgb:    123, 30, 58;   /* para sombras y halos con rgba(var(--primary-rgb), alfa) */
+  --primary-soft-start: #F3DFE4;  /* degradado de banners de bienvenida y estado */
+  --primary-soft-end:   #E8C6CF;
+  --card-gradient-mid:  #96304F;  /* tarjeta de pago simulada */
+
+  --bg-gradient-start: #F6EEEA;
+  --bg-gradient-end:   #FBF7F4;
+  --page-bg:        #FCF8F6;
+  --row-hover:      #FDFAF9;
+
+  --text-primary:   #2A1A1E;
+  --text-secondary: #6B5A5F;
+  --text-muted:     #A39297;
+  --text-link:      #7B1E3A;
+
+  --border:         #EBDCD8;
+  --input-bg:       #FDF9F7;
+  --input-border:   #E2CDC8;
+  --input-focus:    #7B1E3A;
+
+  --neutral-bg: #F1ECEB;
+  --neutral: #77696C;
+  --neutral-strong: #5A4B4F;
+  --neutral-soft-start: #F4F0EF;
+  --neutral-soft-end: #E8E1E0;
+
+  --shade-rgb: 30, 8, 16;   /* fondo oscuro de modales */
+  --hero-rgb:  42, 10, 22;  /* degradado sobre la foto del inicio y sombra de la tarjeta */
+}
+
+/* Verde original (heredado de Aura Food) */
+:root[data-theme="green"] {
+  --primary:        #1B5E35;
+  --primary-hover:  #14472A;
+  --primary-light:  #E8F5EE;
+  --primary-mid:    #3D9970;
+  --primary-rgb:    27, 94, 53;
+  --primary-soft-start: #DFF0E4;
+  --primary-soft-end:   #C5E3CE;
+  --card-gradient-mid:  #2E8B57;
+
+  --bg-gradient-start: #EBF5EB;
+  --bg-gradient-end:   #F4FAF4;
+  --page-bg:        #F7FCF7;
+  --row-hover:      #FAFDFA;
+
+  --text-primary:   #1A2B1A;
+  --text-secondary: #5C6E5C;
+  --text-muted:     #8FA08F;
+  --text-link:      #1B5E35;
+
+  --border:         #D6E9D6;
+  --input-bg:       #F8FCF8;
+  --input-border:   #C8DFC8;
+  --input-focus:    #1B5E35;
+
   --neutral-bg: #eef1ee;
   --neutral: #6b776b;
+  --neutral-strong: #4F5B4F;
+  --neutral-soft-start: #F1F4F1;
+  --neutral-soft-end: #E4E9E4;
+
+  --shade-rgb: 10, 30, 18;
+  --hero-rgb:  10, 36, 20;
 }
 
 /* =========================================
