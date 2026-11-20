@@ -365,6 +365,9 @@
 .muted { font-size: 0.76rem; color: var(--text-muted); }
 .empty .btn-ghost { margin-left: 8px; }
 
+/* Celda de huésped en la tabla de reservas: avatar a la izquierda, nombre y huéspedes apilados */
+.client { display: flex; align-items: center; gap: 10px; }
+
 .client-avatar {
   width: 36px; height: 36px;
   border-radius: 50%;
