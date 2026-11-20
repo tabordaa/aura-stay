@@ -30,6 +30,7 @@ export default function RoomDetailModal({ room, stay, availability, onClose, onA
   const swipeStartRef = useRef(null);
   const titleId = useId();
   const availabilityTitleId = useId();
+  const summaryTitleId = useId();
 
   const dialogRef = useRef(null);
   useFocusTrap(dialogRef, { initialFocusRef: closeRef, onEscape: onClose });
@@ -225,38 +226,44 @@ export default function RoomDetailModal({ room, stay, availability, onClose, onA
           </div>
         </div>
 
-        <section className={styles['availability-section']} aria-labelledby={availabilityTitleId}>
-          <h3 id={availabilityTitleId} className={styles.label}>Disponibilidad</h3>
-          <AvailabilityCalendar
-            roomTypeId={room.id}
-            guests={stay?.guests ?? 1}
-            isPackage={isPackage}
-            packageNights={room.nights}
-            selectedCheckIn={stay?.checkIn ?? null}
-            selectedCheckOut={checkOut}
-            onSelectDates={onSelectDates}
-          />
-        </section>
+        <div className={styles['booking-row']}>
+          <section className={styles['availability-section']} aria-labelledby={availabilityTitleId}>
+            <h3 id={availabilityTitleId} className={styles.label}>Disponibilidad</h3>
+            <AvailabilityCalendar
+              roomTypeId={room.id}
+              guests={stay?.guests ?? 1}
+              isPackage={isPackage}
+              packageNights={room.nights}
+              selectedCheckIn={stay?.checkIn ?? null}
+              selectedCheckOut={checkOut}
+              onSelectDates={onSelectDates}
+            />
+          </section>
 
-        <div className={styles.summary}>
-          {quote ? (
-            <div className={styles.breakdown}>
-              <p className={styles.dates}>{formatStayDate(stay.checkIn)} → {formatStayDate(checkOut)} · {quote.nights} noche{quote.nights !== 1 ? 's' : ''} · {stay.guests} {stay.guests === 1 ? 'huésped' : 'huéspedes'}</p>
-              <div className={styles.row}><span>{isPackage ? 'Paquete' : `${formatPrice(room.price_per_night)} × ${quote.nights}`}</span><span>{formatPrice(quote.subtotal)}</span></div>
-              <div className={styles.row}><span>IVA 19 %</span><span>{formatPrice(quote.taxes)}</span></div>
-              <div className={[styles.row, styles.total].join(' ')}><span>Total</span><span>{formatPrice(quote.total)}</span></div>
+          {/* La etiqueta va fuera de la tarjeta, como "Disponibilidad", para que ambas cajas queden alineadas */}
+          <div className={styles['summary-col']}>
+          <h3 id={summaryTitleId} className={styles.label}>Tu estadía</h3>
+          <aside className={styles.summary} aria-labelledby={summaryTitleId}>
+            {quote ? (
+              <div className={styles.breakdown}>
+                <p className={styles.dates}>{formatStayDate(stay.checkIn)} → {formatStayDate(checkOut)} · {quote.nights} noche{quote.nights !== 1 ? 's' : ''} · {stay.guests} {stay.guests === 1 ? 'huésped' : 'huéspedes'}</p>
+                <div className={styles.row}><span>{isPackage ? 'Paquete' : `${formatPrice(room.price_per_night)} × ${quote.nights}`}</span><span>{formatPrice(quote.subtotal)}</span></div>
+                <div className={styles.row}><span>IVA 19 %</span><span>{formatPrice(quote.taxes)}</span></div>
+                <div className={[styles.row, styles.total].join(' ')}><span>Total</span><span>{formatPrice(quote.total)}</span></div>
+              </div>
+            ) : (
+              <div className={styles.breakdown}>
+                <p className={styles['from-label']}>{isPackage ? `Paquete de ${room.nights} noches` : 'Desde, por noche'}</p>
+                <p className={styles.price}>{formatPrice(isPackage ? room.price : room.price_per_night)}</p>
+              </div>
+            )}
+            <div className={styles.action}>
+              {hint && <p className={[styles.hint, blocked ? styles.error : ''].join(' ')} role={blocked ? 'alert' : undefined}>{hint}</p>}
+              <button type="button" className={styles['btn-add']} onClick={handleAdd} disabled={!canAdd}>
+                Agregar a mi estadía
+              </button>
             </div>
-          ) : (
-            <div className={styles.breakdown}>
-              <p className={styles['from-label']}>{isPackage ? `Paquete de ${room.nights} noches` : 'Desde, por noche'}</p>
-              <p className={styles.price}>{formatPrice(isPackage ? room.price : room.price_per_night)}</p>
-            </div>
-          )}
-          <div className={styles.action}>
-            {hint && <p className={[styles.hint, blocked ? styles.error : ''].join(' ')} role={blocked ? 'alert' : undefined}>{hint}</p>}
-            <button type="button" className={styles['btn-add']} onClick={handleAdd} disabled={!canAdd}>
-              Agregar a mi estadía
-            </button>
+          </aside>
           </div>
         </div>
       </div>
