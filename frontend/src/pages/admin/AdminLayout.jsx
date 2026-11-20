@@ -7,6 +7,7 @@ import styles from './Admin.module.css';
 const NAV = [
   { id: 'panel',    icon: '🧾', label: 'Panel', path: '/admin' },
   { id: 'rooms',    icon: '🛏️', label: 'Habitaciones', path: '/admin/habitaciones' },
+  { id: 'rack',     icon: '🗺️', label: 'Mapa', path: '/admin/mapa' },
   { id: 'guests',   icon: '👥', label: 'Huéspedes', path: '/admin/huespedes' },
 ];
 

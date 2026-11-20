@@ -10,6 +10,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminGuests from './pages/admin/AdminGuests';
 import ProfilePage from './pages/profile/ProfilePage';
 import AdminRooms from './pages/admin/AdminRooms';
+import AdminRack from './pages/admin/AdminRack';
 import HomePage from './pages/home/HomePage';
 
 export default function App() {
@@ -28,6 +29,7 @@ export default function App() {
 
           <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/habitaciones" element={<ProtectedRoute allowedRoles={['admin']}><AdminRooms /></ProtectedRoute>} />
+          <Route path="/admin/mapa" element={<ProtectedRoute allowedRoles={['admin']}><AdminRack /></ProtectedRoute>} />
           <Route path="/admin/huespedes" element={<ProtectedRoute allowedRoles={['admin']}><AdminGuests /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>

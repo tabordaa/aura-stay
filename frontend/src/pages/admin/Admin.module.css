@@ -745,3 +745,284 @@ form.confirm { flex-wrap: wrap; }
   .image-item { flex-wrap: wrap; }
   .image-item .input { flex: 1 1 140px; width: auto; }
 }
+
+/* Mapa del hotel */
+@keyframes rackCardIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.rack-kpis {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.rack-kpi {
+  padding: 14px 18px;
+  gap: 8px;
+}
+.rack-kpi .kpi-head i {
+  width: 34px;
+  height: 34px;
+  font-size: 0.98rem;
+}
+.rack-kpi .kpi-value {
+  font-size: 1.7rem;
+}
+
+/* Tonos semánticos compartidos entre KPIs, tarjetas y botones del modal */
+.rack-tone-done,
+.rack-kpi .kpi-head i.rack-tone-done     { background: var(--primary-light); color: var(--primary); }
+.rack-tone-progress,
+.rack-kpi .kpi-head i.rack-tone-progress { background: var(--warning-bg); color: var(--warning); }
+.rack-tone-rejected,
+.rack-kpi .kpi-head i.rack-tone-rejected { background: var(--neutral-bg); color: var(--neutral-strong); }
+
+.rack-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  margin-bottom: 16px;
+}
+.rack-toolbar .tabs {
+  margin-bottom: 0;
+}
+
+.rack-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+.rack-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.rack-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid transparent;
+  flex-shrink: 0;
+}
+.rack-swatch-done {
+  background: var(--primary-light);
+  border-color: rgba(var(--primary-rgb), 0.35);
+}
+.rack-swatch-progress {
+  background: var(--warning-bg);
+  border-color: color-mix(in srgb, var(--warning) 45%, var(--warning-bg));
+}
+.rack-swatch-rejected {
+  background: var(--neutral-bg);
+  border-color: color-mix(in srgb, var(--neutral) 40%, var(--neutral-bg));
+}
+
+.rack-floors {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.rack-floor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rack-floor + .rack-floor {
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.rack-floor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.rack-floor-head h2 {
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--primary);
+  background: var(--primary-light);
+  padding: 5px 12px;
+  border-radius: var(--radius-xl);
+}
+.rack-floor-head span {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.rack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+}
+
+.rack-card {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  padding: 12px 10px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  text-align: center;
+  animation: rackCardIn 0.28s ease both;
+  animation-delay: calc(var(--rack-i, 0) * 24ms);
+  transition: transform var(--transition), box-shadow var(--transition), background var(--transition), border-color var(--transition), color var(--transition);
+}
+.rack-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.14);
+}
+.rack-card:active {
+  transform: translateY(0);
+}
+
+.rack-card-done {
+  background: var(--primary-light);
+  border-color: rgba(var(--primary-rgb), 0.28);
+  color: var(--primary);
+}
+.rack-card-done:hover {
+  border-color: rgba(var(--primary-rgb), 0.55);
+}
+.rack-card-progress {
+  background: var(--warning-bg);
+  border-color: color-mix(in srgb, var(--warning) 36%, var(--warning-bg));
+  color: var(--warning);
+}
+.rack-card-progress:hover {
+  border-color: color-mix(in srgb, var(--warning) 62%, var(--warning-bg));
+}
+.rack-card-rejected {
+  background: var(--neutral-bg);
+  border-color: color-mix(in srgb, var(--neutral) 34%, var(--neutral-bg));
+  color: var(--neutral-strong);
+}
+.rack-card-rejected:hover {
+  border-color: color-mix(in srgb, var(--neutral) 58%, var(--neutral-bg));
+}
+
+.rack-card-dot {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.rack-card-number {
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.rack-card-type {
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.25;
+  opacity: 0.88;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+/* Selector de estado dentro del modal */
+.rack-status-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rack-status-btn {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition), opacity var(--transition);
+}
+.rack-status-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.1);
+}
+.rack-status-btn:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+.rack-status-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+}
+.rack-status-head svg {
+  margin-left: auto;
+}
+.rack-status-btn small {
+  font-size: 0.76rem;
+  opacity: 0.85;
+  padding-left: 15px;
+}
+.rack-status-active {
+  border-color: currentColor;
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.12);
+}
+.rack-save-idle:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 860px) {
+  .rack-toolbar {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .rack-kpis {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .rack-grid {
+    /* Al menos 3 tarjetas por fila en 360px sin desbordar */
+    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+    gap: 8px;
+  }
+  .rack-card {
+    padding: 8px 6px;
+  }
+  .rack-card-number {
+    font-size: 1.2rem;
+  }
+  .rack-card-type {
+    font-size: 0.68rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rack-card {
+    animation: none;
+    transition: none;
+  }
+  .rack-card:hover,
+  .rack-status-btn:hover:not(:disabled) {
+    transform: none;
+  }
+}
