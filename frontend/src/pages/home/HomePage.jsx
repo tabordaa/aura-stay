@@ -6,6 +6,7 @@ import StaySearchBar from '../../components/StaySearchBar';
 import { IconBed, IconCheck, IconBolt, IconShield, IconCalendar } from '../../components/Icons';
 import { CATEGORIES } from '../../utils/categories';
 import { useAuth } from '../../hooks/useAuth';
+import { useFavorites } from '../../hooks/useFavorites';
 import { roomsService } from '../../services/rooms.service';
 import styles from './Home.module.css';
 import { APP_NAME } from '../../utils/brand';
@@ -33,8 +34,9 @@ export default function HomePage() {
   const [packages, setPackages] = useState([]);
   const [status, setStatus] = useState('loading'); // loading | ready | error
   const [retryKey, setRetryKey] = useState(0);
-  const [favorites, setFavorites] = useState([]);
-  const toggleFav = (id) => setFavorites(f => f.includes(id) ? f.filter(x => x !== id) : [...f, id]);
+  const { favorites, toggleFav } = useFavorites(user?.id);
+  // Sin sesión el corazón lleva al login y luego al catálogo, donde quedan los favoritos
+  const handleFav = (id) => (user ? toggleFav(id) : navigate('/login', { state: { from: '/habitaciones' } }));
 
   useEffect(() => {
     let active = true;
@@ -110,7 +112,7 @@ export default function HomePage() {
                   key={room.id}
                   room={room}
                   favorites={favorites}
-                  toggleFav={toggleFav}
+                  toggleFav={handleFav}
                   onSelect={() => goTo('/habitaciones?cat=paquete')}
                   actionLabel="Ver paquete"
                 />
