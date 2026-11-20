@@ -41,7 +41,7 @@
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 5; /* por encima de flechas y contador del carrusel al hacer scroll */
 }
 .brand { font-size: 1.1rem; font-weight: 800; color: var(--primary); }
 .close-btn {
