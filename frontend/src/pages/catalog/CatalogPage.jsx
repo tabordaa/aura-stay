@@ -12,6 +12,7 @@ import { activeStay, readStay } from '../../utils/stay';
 import { CATEGORIES } from '../../utils/categories';
 import { useAuth } from '../../hooks/useAuth';
 import { useStay } from '../../hooks/useStay';
+import { useFavorites } from '../../hooks/useFavorites';
 import { roomsService } from '../../services/rooms.service';
 import styles from './Catalog.module.css';
 
@@ -38,7 +39,7 @@ export default function CatalogPage() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
-  const [favorites, setFavorites] = useState([]);
+  const [showFavs, setShowFavs] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [rooms, setRooms] = useState([]);
   const [catalogState, setCatalogState] = useState('loading'); // loading | ready | error
@@ -56,6 +57,7 @@ export default function CatalogPage() {
   const availabilityMap = stayKey && availability.key === stayKey ? availability.map : null;
 
   const stayCart = useStay(user?.id);
+  const { favorites, toggleFav, error: favError } = useFavorites(user?.id);
 
   useEffect(() => {
     const timer = setTimeout(() => setQuery(search), SEARCH_DEBOUNCE_MS);
@@ -68,11 +70,12 @@ export default function CatalogPage() {
 
   useEffect(() => {
     let active = true; // descarta respuestas de consultas viejas
-    roomsService.list({ category: searching ? undefined : activeCategory, q: query, minPrice, maxPrice, guests, sort })
+    // Favoritos y búsqueda por texto recorren todas las categorías
+    roomsService.list({ category: searching || showFavs ? undefined : activeCategory, q: query, minPrice, maxPrice, guests, sort })
       .then(data => { if (active) { setRooms(data); setCatalogState('ready'); } })
       .catch(() => { if (active) setCatalogState('error'); });
     return () => { active = false; };
-  }, [activeCategory, searching, query, minPrice, maxPrice, guests, sort, retryKey]);
+  }, [activeCategory, searching, showFavs, query, minPrice, maxPrice, guests, sort, retryKey]);
 
   useEffect(() => {
     if (!stayKey) return undefined;
@@ -121,16 +124,17 @@ export default function CatalogPage() {
     setBannerKey(k => k + 1);
   };
 
-  const toggleFav = (id) => setFavorites(f => f.includes(id) ? f.filter(x => x !== id) : [...f, id]);
   const setFilter = (key) => (e) => setFilters(f => ({ ...f, [key]: e.target.value }));
   const hasFilters = searching || Object.keys(EMPTY_FILTERS).some(k => filters[k] !== EMPTY_FILTERS[k]);
   const clearFilters = () => { setSearch(''); setQuery(''); setFilters(EMPTY_FILTERS); };
 
   const sectionTitle = searching
     ? `Resultados para "${query.trim()}"`
-    : CATEGORIES.find(c => c.id === activeCategory)?.label ?? '';
-  const count = rooms.length;
-  const unavailableCount = availabilityMap ? rooms.filter(r => availabilityMap[r.id]?.available === false).length : 0;
+    : showFavs ? 'Tus favoritos' : CATEGORIES.find(c => c.id === activeCategory)?.label ?? '';
+  const visibleRooms = showFavs ? rooms.filter(r => favorites.includes(r.id)) : rooms;
+  const count = visibleRooms.length;
+  const unavailableCount = availabilityMap ? visibleRooms.filter(r => availabilityMap[r.id]?.available === false).length : 0;
+  const categoryActive = (id) => !searching && !showFavs && activeCategory === id;
   const applyStay = ({ checkIn, checkOut, guests }) => setSearchParams({ in: checkIn, out: checkOut, guests: String(guests) });
   const clearStay = () => setSearchParams({});
   const priceRangeInvalid = minPrice !== '' && maxPrice !== '' && Number(minPrice) > Number(maxPrice);
@@ -171,6 +175,7 @@ export default function CatalogPage() {
               onClear={clearStay}
             />
             {notice && !cartOpen && <p className={styles['cart-notice']} role="status">{notice}</p>}
+            {favError && <p className={styles['cart-notice']} role="alert">{favError}</p>}
 
             {/* Section header */}
             <div className={styles['section-header']}>
@@ -191,13 +196,21 @@ export default function CatalogPage() {
                   <button
                     key={cat.id}
                     type="button"
-                    aria-pressed={!searching && activeCategory === cat.id}
-                    className={[styles['tab-btn'], !searching && activeCategory === cat.id ? styles.active : ''].join(' ')}
-                    onClick={() => { setActiveCategory(cat.id); setSearch(''); setQuery(''); }}
+                    aria-pressed={categoryActive(cat.id)}
+                    className={[styles['tab-btn'], categoryActive(cat.id) ? styles.active : ''].join(' ')}
+                    onClick={() => { setActiveCategory(cat.id); setShowFavs(false); setSearch(''); setQuery(''); }}
                   >
                     {cat.icon} {cat.label}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  aria-pressed={!searching && showFavs}
+                  className={[styles['tab-btn'], !searching && showFavs ? styles.active : ''].join(' ')}
+                  onClick={() => { setShowFavs(true); setSearch(''); setQuery(''); }}
+                >
+                  ❤️ Favoritos ({favorites.length})
+                </button>
               </div>
             </div>
 
@@ -227,7 +240,7 @@ export default function CatalogPage() {
               {priceRangeInvalid && (
                 <p className={styles['filter-error']} role="alert">El precio mínimo no puede ser mayor que el máximo</p>
               )}
-              {hasFilters && !(catalogState === 'ready' && rooms.length === 0) && (
+              {hasFilters && !(catalogState === 'ready' && visibleRooms.length === 0) && (
                 <button type="button" className={styles['btn-secondary']} onClick={clearFilters}>Limpiar filtros</button>
               )}
             </div>
@@ -243,7 +256,13 @@ export default function CatalogPage() {
                 <p>No pudimos cargar las habitaciones. Revisa tu conexión e intenta de nuevo.</p>
                 <button type="button" className={styles['btn-secondary']} onClick={retryCatalog}>Reintentar</button>
               </div>
-            ) : rooms.length === 0 ? (
+            ) : showFavs && !searching && visibleRooms.length === 0 && !hasFilters ? (
+              <div className={styles['catalog-state']}>
+                <span className={styles['state-icon']}>🤍</span>
+                <p>Aún no tienes favoritos. Toca el ❤️ en una habitación para guardarla.</p>
+                <button type="button" className={styles['btn-secondary']} onClick={() => setShowFavs(false)}>Ver habitaciones</button>
+              </div>
+            ) : visibleRooms.length === 0 ? (
               <div className={styles['catalog-state']}>
                 <span className={styles['state-icon']}>🔎</span>
                 <p>No encontramos habitaciones con esos filtros</p>
@@ -251,7 +270,7 @@ export default function CatalogPage() {
               </div>
             ) : (
               <div className={styles['product-grid']}>
-                {rooms.map(room => (
+                {visibleRooms.map(room => (
                   <RoomCard
                     key={room.id}
                     room={room}
