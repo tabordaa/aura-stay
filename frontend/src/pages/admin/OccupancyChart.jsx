@@ -13,15 +13,18 @@ function formatDaySummary(day) {
 export default function OccupancyChart({ data = [], loading = false, error = false }) {
   const [activeIndex, setActiveIndex] = useState(null);
 
-  const { averagePct, peakIndex, adjacentClosePeak } = useMemo(() => {
-    if (data.length === 0) return { averagePct: 0, peakIndex: -1, adjacentClosePeak: false };
+  const { averagePct, peakIndex, adjacentClosePeak, scaleMax } = useMemo(() => {
+    if (data.length === 0) return { averagePct: 0, peakIndex: -1, adjacentClosePeak: false, scaleMax: 100 };
     const totalPct = data.reduce((sum, d) => sum + d.pct, 0);
     const avg = Math.round(totalPct / data.length);
     const maxPct = data.reduce((max, d) => Math.max(max, d.pct), 0);
     const peak = maxPct > 0 ? data.findIndex((d) => d.pct === maxPct) : -1;
     // Evita que la etiqueta del pico se encime con la de hoy en pantallas estrechas
     const closePeak = peak === 1 && Math.abs(data[1].pct - data[0].pct) < 14;
-    return { averagePct: avg, peakIndex: peak, adjacentClosePeak: closePeak };
+    // Escala desde 0 hasta el siguiente múltiplo de 25 % (mínimo 25): con ocupación baja las barras
+    // siguen siendo legibles y el eje rotulado deja claro el rango real
+    const top = Math.min(100, Math.max(25, Math.ceil(maxPct / 25) * 25));
+    return { averagePct: avg, peakIndex: peak, adjacentClosePeak: closePeak, scaleMax: top };
   }, [data]);
 
   const hasData = data.length > 0;
@@ -61,13 +64,13 @@ export default function OccupancyChart({ data = [], loading = false, error = fal
         <div
           className={[styles['occ-figure'], loading ? styles['occ-loading'] : ''].join(' ')}
           role="figure"
-          aria-label={`Ocupación prevista para los próximos ${data.length} días, promedio ${averagePct} por ciento`}
+          aria-label={`Ocupación prevista para los próximos ${data.length} días, promedio ${averagePct} por ciento, escala de 0 a ${scaleMax} por ciento`}
         >
           <div className={styles['occ-chart']}>
             {/* Etiquetas recesivas del eje Y alineadas con la cuadrícula */}
             <div className={styles['occ-yaxis']} aria-hidden="true">
-              <span className={styles['occ-ytick-100']}>100 %</span>
-              <span className={styles['occ-ytick-50']}>50 %</span>
+              <span className={styles['occ-ytick-100']}>{scaleMax} %</span>
+              <span className={styles['occ-ytick-50']}>{(scaleMax / 2).toLocaleString('es-CO')} %</span>
               <span className={styles['occ-ytick-0']}>0 %</span>
             </div>
 
@@ -97,7 +100,7 @@ export default function OccupancyChart({ data = [], loading = false, error = fal
                     const isPeak = i === peakIndex;
                     const showVal = isToday || isPeak;
                     const isActive = activeIndex === i;
-                    const barHeight = Math.min(100, Math.max(0, day.pct));
+                    const barHeight = Math.min(100, Math.max(0, (day.pct / scaleMax) * 100));
                     const summary = formatDaySummary(day);
 
                     return (
@@ -155,8 +158,10 @@ export default function OccupancyChart({ data = [], loading = false, error = fal
             </div>
           </div>
 
-          {/* Tabla equivalente oculta visualmente para lectores de pantalla */}
-          <table className={styles['sr-only']}>
+          {/* Tabla equivalente oculta visualmente para lectores de pantalla; va en un div porque
+              una tabla ignora width: 1px y se expande a su contenido (causaba scroll horizontal) */}
+          <div className={styles['sr-only']}>
+          <table>
             <caption>Ocupación prevista para los próximos {data.length} días</caption>
             <thead>
               <tr>
@@ -177,6 +182,7 @@ export default function OccupancyChart({ data = [], loading = false, error = fal
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </section>
