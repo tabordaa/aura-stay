@@ -1,7 +1,6 @@
 /* Calendario mensual de disponibilidad dentro del modal de detalle */
 .calendar {
   width: 100%;
-  max-width: 440px;
   background: var(--card-bg);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-md);
@@ -204,9 +203,10 @@
   background: var(--primary-hover);
   color: var(--card-bg);
 }
+/* Si hoy es la llegada o la salida, el relleno ya lo marca: sin anillo para no duplicar el borde */
 .day-start.day-today,
 .day-end.day-today {
-  box-shadow: inset 0 0 0 2px var(--card-bg), 0 0 0 1.5px var(--primary);
+  box-shadow: none;
 }
 
 .day-start.day-has-end {
@@ -296,7 +296,6 @@
 
 @media (max-width: 640px) {
   .calendar {
-    max-width: none;
     padding: 10px 8px;
   }
   .day,

@@ -7,8 +7,8 @@ import { buildReservations } from '../mocks/reservations';
 import { buildRooms } from '../mocks/rooms';
 import { todayISO } from '../utils/dates';
 
-// v3: la semilla incluye reservas · v4: totales de paquetes corregidos · v5: llegadas de hoy en la semilla · v6: habitaciones físicas · v8: created_at en usuarios
-const DB_KEY = 'aura_stay_db_v8';
+// v3: la semilla incluye reservas · v4: totales de paquetes corregidos · v5: llegadas de hoy en la semilla · v6: habitaciones físicas · v8: created_at en usuarios · v9: más reservas demo
+const DB_KEY = 'aura_stay_db_v9';
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sin 0/O/1/I para no confundir
 
 // Simula la latencia de red
