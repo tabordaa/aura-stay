@@ -7,6 +7,9 @@ import styles from '../pages/catalog/Catalog.module.css';
 
 // Chips visibles por tarjeta (el resto se ve en el detalle, S05)
 const MAX_AMENITIES = 4;
+// Aviso de escasez para las fechas buscadas: queda una sola unidad, o ya se reservaron
+// algunas y quedan estas o menos (así un tipo con 2 unidades vacío no aparece como "casi lleno")
+const LOW_STOCK = 2;
 
 export default function RoomCard({ room, favorites, toggleFav, onSelect, stay, availability, actionLabel = 'Ver detalles' }) {
   const [imgError, setImgError] = useState(false);
@@ -17,6 +20,9 @@ export default function RoomCard({ room, favorites, toggleFav, onSelect, stay, a
   // Con fechas se muestra el total de la estadía; sin ellas, la tarjeta es la de siempre
   const quote = stay ? stayQuote({ roomType: room, checkIn: stay.checkIn, checkOut: stay.checkOut, guests: stay.guests }) : null;
   const unavailable = Boolean(stay && availability && !availability.available);
+  const remaining = availability?.remaining ?? 0;
+  const lowStock = Boolean(stay && availability?.available
+    && (remaining === 1 || (remaining <= LOW_STOCK && remaining < room.units)));
   const nightsLabel = quote ? `${isPackage ? 'Paquete de ' : ''}${quote.nights} noche${quote.nights !== 1 ? 's' : ''}` : '';
 
   return (
@@ -24,7 +30,12 @@ export default function RoomCard({ room, favorites, toggleFav, onSelect, stay, a
       {/* La imagen abre el detalle con el mouse; el teclado usa "Ver detalles" */}
       <div className={styles['card-image-area']} onClick={() => onSelect?.(room)}>
         {unavailable && <span className={styles['card-unavailable']}>Sin disponibilidad</span>}
-        {room.tag && !unavailable && (
+        {lowStock && (
+          <span className={styles['card-scarcity']}>
+            🔥 ¡Solo queda{remaining !== 1 ? 'n' : ''} {remaining}!
+          </span>
+        )}
+        {room.tag && !unavailable && !lowStock && (
           <span className={[styles['card-tag'], room.old_price ? styles['tag-deal'] : ''].join(' ')}>
             {room.tag}
           </span>

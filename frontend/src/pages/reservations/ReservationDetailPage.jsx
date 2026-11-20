@@ -1,15 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { IconCheck, IconCalendar, IconPhone } from '../../components/Icons';
+import { IconBed, IconCalendar, IconCheck, IconDownload, IconPhone } from '../../components/Icons';
 import StatusBadge from '../../components/StatusBadge';
 import { reservationsService } from '../../services/reservations.service';
+import { APP_NAME } from '../../utils/brand';
 import { formatPrice } from '../../utils/format';
-import { formatLongDate, formatStayDate } from '../../utils/dates';
+import { formatLongDate, formatStayDate, parseISODate, todayISO } from '../../utils/dates';
 import { categoryLabel } from '../../utils/categories';
 import { CANCEL_TOO_LATE_MESSAGE, PAYMENT_LABELS, TIMELINE, canCancel, statusMeta, timelineIndex } from '../../utils/reservations';
 import CancelReservationModal from './CancelReservationModal';
 import ReservationsTopbar from './ReservationsTopbar';
 import styles from './Reservations.module.css';
+
+// Horarios compartidos entre el detalle en pantalla y el pie del comprobante impreso
+const STAY_SCHEDULE = 'Check-in desde las 15:00 · Check-out hasta las 12:00';
 
 export default function ReservationDetailPage() {
   const { id } = useParams();
@@ -78,9 +82,31 @@ export default function ReservationDetailPage() {
     const current = timelineIndex(r.status);
     const step = closed ? meta : TIMELINE[current];
     const cancellable = canCancel(r);
+    // Se usa parseISODate(todayISO()) para fijar mediodía local y evitar desfases de fecha por UTC
+    const issuedDate = formatLongDate(parseISODate(todayISO()));
 
     content = (
       <>
+        <header className={styles['receipt-header']}>
+          <div className={styles['receipt-top']}>
+            <div className={styles['receipt-brand-block']}>
+              <div className={styles['receipt-brand']}>
+                <IconBed size={22} />
+                <span>{APP_NAME}</span>
+              </div>
+              <p className={styles['receipt-title']}>{closed ? 'Resumen de reserva' : 'Comprobante de reserva'}</p>
+            </div>
+            <div className={styles['receipt-meta']}>
+              <StatusBadge status={r.status} />
+              <p className={styles['receipt-date']}>Emitido el {issuedDate}</p>
+            </div>
+          </div>
+          <div className={styles['receipt-code-box']}>
+            <small>Código de reserva</small>
+            <strong className={styles['receipt-code']}>{r.code}</strong>
+          </div>
+        </header>
+
         <section className={[styles.hero, finished ? styles.delivered : '', closed ? styles.closed : ''].join(' ')}>
           <div className={styles['hero-main']}>
             <p className={styles['hero-meta']}>Reserva <strong>{r.code}</strong> • {r.room.name}</p>
@@ -112,7 +138,7 @@ export default function ReservationDetailPage() {
         )}
 
         {!closed && (
-          <section className={styles.panel}>
+          <section className={[styles.panel, styles['timeline-panel']].join(' ')}>
             <ol className={styles.progress} style={{ '--progress': `${(current / (TIMELINE.length - 1)) * 100}%` }}>
               {TIMELINE.map((s, i) => (
                 <li
@@ -164,7 +190,7 @@ export default function ReservationDetailPage() {
               <div>
                 <small>Fechas</small>
                 <p>{formatStayDate(r.check_in)} → {formatStayDate(r.check_out)}</p>
-                <p className={styles.muted}>Check-in desde las 15:00 • Check-out hasta las 12:00</p>
+                <p className={styles.muted}>{STAY_SCHEDULE}</p>
               </div>
             </div>
             <div className={styles.detail}>
@@ -193,9 +219,20 @@ export default function ReservationDetailPage() {
           </section>
         </div>
 
+        {!closed && (
+          <footer className={styles['receipt-footer']}>
+            <p>Presenta este código en recepción al hacer check-in. {STAY_SCHEDULE}.</p>
+          </footer>
+        )}
+
         <div className={styles.actions}>
           <Link to="/habitaciones" className={styles['btn-primary']}>Buscar habitaciones</Link>
           <Link to="/reservas" className={styles['btn-secondary']}>Ver todas mis reservas</Link>
+          {!closed && (
+            <button type="button" className={styles['btn-secondary']} onClick={() => window.print()}>
+              <IconDownload size={16} /> Descargar comprobante
+            </button>
+          )}
           {cancellable && (
             <button type="button" className={styles['btn-cancel']} onClick={() => setConfirmCancel(true)}>
               Cancelar reserva
