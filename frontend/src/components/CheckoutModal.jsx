@@ -14,10 +14,33 @@ import styles from './CheckoutModal.module.css';
 
 // Tiempo que dura la simulación de "aprobando pago con el banco"
 const CARD_PROCESSING_MS = 1200;
+const COPY_FEEDBACK_MS = 2000;
 
 const EMPTY_CARD = { number: '', name: '', expiry: '', cvv: '' };
 const STEPS = ['Estadía', 'Titular', 'Pago', 'Confirmación'];
 const TRACKING = ['Solicitud', 'Confirmación', 'Check-in', 'Check-out'];
+
+// Piezas decorativas de confeti con trayectoria fija para evitar aleatoriedad en render
+const CONFETTI_PIECES = [
+  { x: -88, y: -36, rot: -210, delay: 180, w: 6, h: 10, round: false, color: 'var(--primary)' },
+  { x: -70, y: -48, rot: 145, delay: 220, w: 6, h: 6, round: true, color: 'var(--warning)' },
+  { x: -46, y: -48, rot: -165, delay: 190, w: 5, h: 9, round: false, color: 'var(--primary-mid)' },
+  { x: -20, y: -46, rot: 190, delay: 250, w: 7, h: 5, round: false, color: 'var(--primary-light)' },
+  { x: 14, y: -48, rot: -140, delay: 200, w: 6, h: 6, round: true, color: 'var(--primary)' },
+  { x: 42, y: -46, rot: 215, delay: 230, w: 5, h: 10, round: false, color: 'var(--warning)' },
+  { x: 68, y: -42, rot: -185, delay: 210, w: 6, h: 9, round: false, color: 'var(--primary-mid)' },
+  { x: 90, y: -28, rot: 170, delay: 260, w: 6, h: 6, round: true, color: 'var(--primary)' },
+  { x: 92, y: -4, rot: -230, delay: 200, w: 7, h: 5, round: false, color: 'var(--primary-mid)' },
+  { x: 82, y: 20, rot: 155, delay: 270, w: 5, h: 9, round: false, color: 'var(--warning)' },
+  { x: 56, y: 26, rot: -175, delay: 240, w: 6, h: 6, round: true, color: 'var(--primary-light)' },
+  { x: 26, y: 28, rot: 130, delay: 290, w: 5, h: 8, round: false, color: 'var(--primary)' },
+  { x: -28, y: 26, rot: -150, delay: 280, w: 6, h: 6, round: true, color: 'var(--primary-mid)' },
+  { x: -58, y: 22, rot: 200, delay: 230, w: 5, h: 9, round: false, color: 'var(--warning)' },
+  { x: -84, y: 16, rot: -190, delay: 260, w: 7, h: 5, round: false, color: 'var(--primary)' },
+  { x: -92, y: -10, rot: 160, delay: 210, w: 6, h: 6, round: true, color: 'var(--primary-light)' },
+  { x: -34, y: -30, rot: 240, delay: 310, w: 5, h: 8, round: false, color: 'var(--warning)' },
+  { x: 34, y: -28, rot: -220, delay: 300, w: 5, h: 8, round: false, color: 'var(--primary-mid)' },
+];
 
 /**
  * Modal "Confirmar reserva". Se monta solo cuando está abierto, así el titular se precarga
@@ -44,17 +67,22 @@ export default function CheckoutModal({ onClose, items, onReserved }) {
   // null = automático (marcada solo si el titular difiere del perfil); true/false = elección del usuario
   const [saveChoice, setSaveChoice] = useState(null);
   const [profileWarning, setProfileWarning] = useState('');
+  const [copied, setCopied] = useState(false);
   const differsFromProfile = ['name', 'document', 'phone'].some(k => holder[k].trim() !== (user?.[k] ?? '').trim());
   const saveToProfile = saveChoice ?? differsFromProfile;
   const busy = stage !== 'form';
   const uid = useId();
   const dialogRef = useRef(null);
   const mounted = useRef(true);
+  const copyTimerRef = useRef(null);
   const errId = (name) => `${uid}-${name}-error`;
 
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; };
+    return () => {
+      mounted.current = false;
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
   }, []);
 
   const totals = combineQuotes(items.map(i => i.quote));
@@ -150,6 +178,24 @@ export default function CheckoutModal({ onClose, items, onReserved }) {
     : payment === 'card' ? <>Pagar {formatPrice(totals.total)} <IconLock size={15} /></>
     : <>Confirmar reserva <IconArrowRight size={16} /></>;
 
+  const reservationCodes = receipt ? receipt.reservations.map(r => r.code).join(', ') : '';
+
+  async function handleCopyCode() {
+    if (!reservationCodes) return;
+    try {
+      if (!navigator.clipboard?.writeText) return;
+      await navigator.clipboard.writeText(reservationCodes);
+      if (!mounted.current) return;
+      setCopied(true);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => {
+        if (mounted.current) setCopied(false);
+      }, COPY_FEEDBACK_MS);
+    } catch {
+      // El portapapeles puede no estar disponible si falta permiso o contexto seguro
+    }
+  }
+
   const goToReservations = () => {
     const list = receipt.reservations;
     closeModal();
@@ -183,46 +229,100 @@ export default function CheckoutModal({ onClose, items, onReserved }) {
         {receipt ? (
           /* ---------- Reserva confirmada ---------- */
           <div className={styles.success}>
-            <div className={styles['success-icon']}><IconCheck size={34} /></div>
-            <h2 id="checkout-title">{receipt.method === 'card' ? 'Tu estadía está confirmada' : 'Recibimos tu solicitud'}</h2>
-            <p className={styles['success-sub']}>
-              {receipt.method === 'hotel' && 'El hotel la confirmará pronto. '}
-              {receipt.reservations.length > 1 ? 'Códigos' : 'Código'} de reserva:{' '}
-              <strong>{receipt.reservations.map(r => r.code).join(', ')}</strong>
-            </p>
-
-            <ol className={styles.tracking}>
-              {TRACKING.map((t, i) => (
-                <li key={t} className={i === (receipt.method === 'card' ? 1 : 0) ? styles.active : ''}>
-                  <span />
-                  {t}
-                </li>
-              ))}
-            </ol>
-
-            <div className={styles.receipt}>
-              {receipt.reservations.map(r => (
-                <div key={r.id} className={styles['receipt-row']}>
-                  <span>{receipt.names[r.room_type_id]} <em>{formatStayDate(r.check_in)} → {formatStayDate(r.check_out)}</em></span>
-                  <span>{formatPrice(r.total)}</span>
-                </div>
-              ))}
-              <div className={styles.divider} />
-              <div className={[styles['receipt-row'], styles['receipt-total']].join(' ')}>
-                <span>Total</span><span>{formatPrice(receipt.total)}</span>
+            <div className={styles['success-stage']}>
+              <div className={styles.confetti} aria-hidden="true">
+                {CONFETTI_PIECES.map((piece, i) => (
+                  <span
+                    key={i}
+                    aria-hidden="true"
+                    className={styles['confetti-piece']}
+                    style={{
+                      '--tx': `${piece.x}px`,
+                      '--ty': `${piece.y}px`,
+                      '--rot': `${piece.rot}deg`,
+                      '--delay': `${piece.delay}ms`,
+                      '--w': `${piece.w}px`,
+                      '--h': `${piece.h}px`,
+                      '--r': piece.round ? '50%' : '2px',
+                      '--color': piece.color,
+                    }}
+                  />
+                ))}
               </div>
-              <div className={styles.divider} />
-              <div className={styles['receipt-row']}><span>Pago</span><span>{receipt.paymentLabel}</span></div>
-              <div className={styles['receipt-row']}><span>Titular</span><span>{receipt.reservations[0].guest_name}</span></div>
+              <div className={styles['success-icon']} aria-hidden="true">
+                <svg className={styles['success-check']} viewBox="0 0 36 36" width="36" height="36" fill="none">
+                  <path
+                    className={styles['success-check-path']}
+                    d="M8.5 18.5L15 25L27.5 12"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
             </div>
 
-            {profileWarning && <p className={styles.change} role="status">{profileWarning}</p>}
-
-            <div className={styles['success-actions']}>
-              <button className={styles['btn-confirm']} onClick={goToReservations} autoFocus>
-                {receipt.reservations.length === 1 ? 'Ver mi reserva' : 'Ver mis reservas'}
+            <div className={styles['code-pill']}>
+              <span className={styles['code-label']}>
+                {receipt.reservations.length > 1 ? 'Códigos de reserva' : 'Código de reserva'}
+              </span>
+              <strong className={styles['code-value']}>{reservationCodes}</strong>
+              <button
+                type="button"
+                className={[styles['btn-copy'], copied ? styles['btn-copy-done'] : ''].join(' ')}
+                onClick={handleCopyCode}
+                aria-label={copied
+                  ? `${receipt.reservations.length > 1 ? 'Códigos de reserva copiados' : 'Código de reserva copiado'}`
+                  : `Copiar ${receipt.reservations.length > 1 ? 'códigos' : 'código'} de reserva ${reservationCodes}`}
+              >
+                {copied ? <><IconCheck size={12} /> ¡Copiado!</> : 'Copiar código'}
               </button>
-              <button className={styles['btn-ghost']} onClick={closeModal}>Seguir explorando</button>
+            </div>
+
+            <h2 id="checkout-title" className={styles['success-title']}>
+              {receipt.method === 'card' ? 'Tu estadía está confirmada' : 'Recibimos tu solicitud'}
+            </h2>
+            <p className={styles['success-sub']}>
+              {receipt.method === 'hotel'
+                ? 'El hotel la confirmará pronto.'
+                : 'Presenta tu código al hacer check-in.'}
+            </p>
+
+            <div className={styles['success-details']}>
+              <ol className={styles.tracking}>
+                {TRACKING.map((t, i) => (
+                  <li key={t} className={i === (receipt.method === 'card' ? 1 : 0) ? styles.active : ''}>
+                    <span />
+                    {t}
+                  </li>
+                ))}
+              </ol>
+
+              <div className={styles.receipt}>
+                {receipt.reservations.map(r => (
+                  <div key={r.id} className={styles['receipt-row']}>
+                    <span>{receipt.names[r.room_type_id]} <em>{formatStayDate(r.check_in)} → {formatStayDate(r.check_out)}</em></span>
+                    <span>{formatPrice(r.total)}</span>
+                  </div>
+                ))}
+                <div className={styles.divider} />
+                <div className={[styles['receipt-row'], styles['receipt-total']].join(' ')}>
+                  <span>Total</span><span>{formatPrice(receipt.total)}</span>
+                </div>
+                <div className={styles.divider} />
+                <div className={styles['receipt-row']}><span>Pago</span><span>{receipt.paymentLabel}</span></div>
+                <div className={styles['receipt-row']}><span>Titular</span><span>{receipt.reservations[0].guest_name}</span></div>
+              </div>
+
+              {profileWarning && <p className={styles.change} role="status">{profileWarning}</p>}
+
+              <div className={styles['success-actions']}>
+                <button className={styles['btn-confirm']} onClick={goToReservations} autoFocus>
+                  {receipt.reservations.length === 1 ? 'Ver mi reserva' : 'Ver mis reservas'}
+                </button>
+                <button className={styles['btn-ghost']} onClick={closeModal}>Seguir explorando</button>
+              </div>
             </div>
           </div>
         ) : (
