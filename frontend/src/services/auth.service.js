@@ -11,8 +11,8 @@ function publicUser(user) {
   return rest;
 }
 
-// La sesión guarda solo el id del usuario
-function readSession() {
+// La sesión guarda solo el id del usuario (también la usan otros servicios para saber quién pide)
+export function readSession() {
   try {
     const raw = localStorage.getItem(SESSION_KEY);
     const parsed = raw ? JSON.parse(raw) : null;
