@@ -240,8 +240,10 @@ export default function RoomDetailModal({ room, stay, availability, onClose, onA
             />
           </section>
 
+          {/* La etiqueta va fuera de la tarjeta, como "Disponibilidad", para que ambas cajas queden alineadas */}
+          <div className={styles['summary-col']}>
+          <h3 id={summaryTitleId} className={styles.label}>Tu estadía</h3>
           <aside className={styles.summary} aria-labelledby={summaryTitleId}>
-            <h3 id={summaryTitleId} className={styles.label}>Tu estadía</h3>
             {quote ? (
               <div className={styles.breakdown}>
                 <p className={styles.dates}>{formatStayDate(stay.checkIn)} → {formatStayDate(checkOut)} · {quote.nights} noche{quote.nights !== 1 ? 's' : ''} · {stay.guests} {stay.guests === 1 ? 'huésped' : 'huéspedes'}</p>
@@ -262,6 +264,7 @@ export default function RoomDetailModal({ room, stay, availability, onClose, onA
               </button>
             </div>
           </aside>
+          </div>
         </div>
       </div>
     </div>

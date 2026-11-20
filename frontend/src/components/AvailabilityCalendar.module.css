@@ -203,9 +203,10 @@
   background: var(--primary-hover);
   color: var(--card-bg);
 }
+/* Si hoy es la llegada o la salida, el relleno ya lo marca: sin anillo para no duplicar el borde */
 .day-start.day-today,
 .day-end.day-today {
-  box-shadow: inset 0 0 0 2px var(--card-bg), 0 0 0 1.5px var(--primary);
+  box-shadow: none;
 }
 
 .day-start.day-has-end {
