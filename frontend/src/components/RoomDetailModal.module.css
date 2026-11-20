@@ -41,7 +41,7 @@
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 5; /* por encima de flechas y contador del carrusel al hacer scroll */
 }
 .brand { font-size: 1.1rem; font-weight: 800; color: var(--primary); }
 .close-btn {
@@ -57,6 +57,8 @@
 .close-btn:hover { background: var(--error-bg); border-color: var(--error-strong); color: var(--error-strong); }
 .close-btn:focus-visible,
 .thumb:focus-visible,
+.carousel-btn:focus-visible,
+.main:focus-visible,
 .btn-add:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 .content {
@@ -66,18 +68,73 @@
   padding: 24px;
 }
 
-/* Galería */
+/* Galería y carrusel */
 .main {
+  position: relative;
   aspect-ratio: 4 / 3;
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--primary-light);
+  touch-action: pan-y;
+  user-select: none;
+}
+.slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition);
+}
+.slide-active {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 1;
 }
 .main-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .img-placeholder {
   width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
   font-size: 2.5rem;
+}
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-xl);
+  background: var(--card-bg);
+  background: color-mix(in srgb, var(--card-bg) 86%, transparent);
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(var(--shade-rgb), 0.16);
+  transition: background var(--transition), color var(--transition), transform var(--transition);
+}
+.carousel-btn:hover {
+  background: var(--card-bg);
+  color: var(--primary);
+  transform: translateY(-50%) scale(1.05);
+}
+.carousel-prev { left: 10px; }
+.carousel-next { right: 10px; }
+.counter {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  z-index: 2;
+  padding: 4px 10px;
+  border-radius: var(--radius-xl);
+  background: rgba(var(--shade-rgb), 0.72);
+  backdrop-filter: blur(4px);
+  color: var(--card-bg);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 .thumbs { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding: 3px; }
 .thumb {
@@ -138,6 +195,16 @@
 }
 .list li svg { color: var(--primary); flex-shrink: 0; margin-top: 3px; }
 
+/* Calendario de disponibilidad */
+.availability-section {
+  padding: 20px 24px 24px;
+  border-top: 1px solid var(--border);
+}
+.availability-section .label {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
 /* Resumen de precio */
 .summary {
   display: flex;
@@ -170,6 +237,15 @@
 .btn-add:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
 .btn-add:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; }
 
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .modal { animation: none; }
+  .slide,
+  .carousel-btn,
+  .thumb,
+  .btn-add { transition: none; }
+}
+
 @media (max-width: 860px) {
   .content { grid-template-columns: minmax(0, 1fr); gap: 18px; }
 }
@@ -178,6 +254,7 @@
   .modal { max-height: calc(100vh - 16px); }
   .header, .summary { padding-left: 16px; padding-right: 16px; }
   .content { padding: 16px; }
+  .availability-section { padding: 16px; }
   .summary { flex-direction: column; align-items: stretch; }
   .breakdown { max-width: none; }
   .action { align-items: stretch; }

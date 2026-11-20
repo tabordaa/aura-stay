@@ -295,6 +295,7 @@ export default function CatalogPage() {
           availability={availabilityMap?.[selectedRoom.id]}
           onClose={closeDetail}
           onAdd={handleAddStay}
+          onSelectDates={({ checkIn, checkOut }) => applyStay({ checkIn, checkOut, guests: stay?.guests || Number(rawStay?.guests) || 1 })}
         />
       )}
 

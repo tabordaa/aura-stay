@@ -1,5 +1,5 @@
 import { delay, loadDb } from './mockApi';
-import { addDays } from '../utils/dates';
+import { addDays, todayISO } from '../utils/dates';
 import { validateStay } from '../utils/stay';
 
 // Reservas que ocupan una unidad del tipo
@@ -72,6 +72,30 @@ export const roomsService = {
     for (const r of roomTypes) {
       const { available, remaining, reason } = checkRoomAvailability(r, { checkIn, checkOut, guests: people }, reservations);
       result[r.id] = { available, remaining, reason };
+    }
+    return result;
+  },
+
+  // Disponibilidad noche a noche desde `from` durante `days` días.
+  // En paquetes, checkRoomAvailability ya evalúa el rango completo [date, date + nights).
+  async calendar(roomTypeId, { from = todayISO(), days = 60, guests = 1 } = {}) {
+    await delay();
+    const { roomTypes, reservations } = loadDb();
+    const roomType = roomTypes.find((r) => r.id === roomTypeId && r.is_active);
+    if (!roomType) throw new Error('Habitación no encontrada');
+
+    const start = from || todayISO();
+    const people = Number(guests) || 1;
+    const totalDays = Math.max(0, Number(days) || 0);
+    const result = [];
+    for (let i = 0; i < totalDays; i += 1) {
+      const date = addDays(start, i);
+      const { available, remaining } = checkRoomAvailability(
+        roomType,
+        { checkIn: date, checkOut: addDays(date, 1), guests: people },
+        reservations,
+      );
+      result.push({ date, remaining, available });
     }
     return result;
   },
