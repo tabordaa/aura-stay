@@ -1,7 +1,6 @@
 /* Calendario mensual de disponibilidad dentro del modal de detalle */
 .calendar {
   width: 100%;
-  max-width: 440px;
   background: var(--card-bg);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-md);
@@ -296,7 +295,6 @@
 
 @media (max-width: 640px) {
   .calendar {
-    max-width: none;
     padding: 10px 8px;
   }
   .day,
