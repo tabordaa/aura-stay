@@ -1,6 +1,7 @@
 import { useId, useRef, useState } from 'react';
 import useFocusTrap from '../hooks/useFocusTrap';
-import { IconCheck } from './Icons';
+import { IconCheck, IconChevronLeft, IconChevronRight } from './Icons';
+import AvailabilityCalendar from './AvailabilityCalendar';
 import { formatPrice } from '../utils/format';
 import { addDays, formatStayDate } from '../utils/dates';
 import { amenityLabel, categoryLabel } from '../utils/categories';
@@ -18,25 +19,75 @@ const AVAILABILITY_REASONS = {
   sold_out: () => 'No hay disponibilidad para esas fechas.',
 };
 
+// Desplazamiento horizontal mínimo (px) para cambiar de foto al deslizar en táctil
+const SWIPE_THRESHOLD = 40;
+
 // Se monta solo con `room` (el padre pasa key={room.id}), así la galería arranca siempre en la primera foto
-export default function RoomDetailModal({ room, stay, availability, onClose, onAdd }) {
+export default function RoomDetailModal({ room, stay, availability, onClose, onAdd, onSelectDates }) {
   const [active, setActive] = useState(0);
   const [imgError, setImgError] = useState({});
   const closeRef = useRef(null);
+  const swipeStartRef = useRef(null);
   const titleId = useId();
+  const availabilityTitleId = useId();
 
   const dialogRef = useRef(null);
   useFocusTrap(dialogRef, { initialFocusRef: closeRef, onEscape: onClose });
 
   const isPackage = room.category === 'paquete';
   const images = room.images ?? [];
-  const current = images[active];
+  const hasMultiple = images.length > 1;
   const quote = stay ? stayQuote({ roomType: room, checkIn: stay.checkIn, checkOut: stay.checkOut, guests: stay.guests }) : null;
   const checkOut = stay ? (isPackage ? addDays(stay.checkIn, room.nights) : stay.checkOut) : null;
   const blocked = availability && !availability.available;
   const reasonText = blocked ? (AVAILABILITY_REASONS[availability.reason] ?? AVAILABILITY_REASONS.sold_out)(room) : '';
   const canAdd = Boolean(stay && !blocked);
   const hint = !stay ? 'Elige tus fechas para ver el total' : reasonText;
+
+  const goPrev = () => {
+    if (!hasMultiple) return;
+    setActive((i) => (i - 1 + images.length) % images.length);
+  };
+  const goNext = () => {
+    if (!hasMultiple) return;
+    setActive((i) => (i + 1) % images.length);
+  };
+
+  // Las flechas solo actúan cuando el foco está dentro del carrusel
+  const handleGalleryKeyDown = (e) => {
+    if (!hasMultiple) return;
+    if (e.target.closest('input, textarea, select')) return;
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      goPrev();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      goNext();
+    }
+  };
+
+  const handlePointerDown = (e) => {
+    if (!hasMultiple) return;
+    if (e.target.closest('button')) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    swipeStartRef.current = { x: e.clientX, y: e.clientY, pointerId: e.pointerId };
+  };
+
+  const handlePointerUp = (e) => {
+    const start = swipeStartRef.current;
+    if (!start || start.pointerId !== e.pointerId) return;
+    swipeStartRef.current = null;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    if (Math.abs(dx) >= SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) goNext();
+      else goPrev();
+    }
+  };
+
+  const handlePointerCancel = () => {
+    swipeStartRef.current = null;
+  };
 
   const handleAdd = () => {
     if (!canAdd) return;
@@ -56,28 +107,77 @@ export default function RoomDetailModal({ room, stay, availability, onClose, onA
       >
         <div className={styles.header}>
           <span className={styles.brand}>{categoryLabel(room.category)}</span>
-          <button ref={closeRef} className={styles['close-btn']} onClick={onClose} aria-label="Cerrar">✕</button>
+          <button ref={closeRef} type="button" className={styles['close-btn']} onClick={onClose} aria-label="Cerrar">✕</button>
         </div>
 
         <div className={styles.content}>
-          <section className={styles.gallery} aria-label="Galería de fotos">
-            <div className={styles.main}>
-              {current && !imgError[active] ? (
-                <img
-                  src={current}
-                  alt={`${room.name}, foto ${active + 1} de ${images.length}`}
-                  className={styles['main-img']}
-                  onError={() => setImgError(e => ({ ...e, [active]: true }))}
-                />
+          <section
+            className={styles.gallery}
+            aria-label="Galería de fotos"
+            aria-roledescription={hasMultiple ? 'carrusel' : undefined}
+            onKeyDown={handleGalleryKeyDown}
+          >
+            <div
+              className={styles.main}
+              tabIndex={hasMultiple ? 0 : undefined}
+              onPointerDown={handlePointerDown}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerCancel}
+            >
+              {images.length > 0 ? (
+                images.map((src, i) => (
+                  <div
+                    key={`${src}-${i}`}
+                    className={[styles.slide, i === active ? styles['slide-active'] : ''].join(' ')}
+                    aria-hidden={i !== active}
+                  >
+                    {!imgError[i] ? (
+                      <img
+                        src={src}
+                        alt={`${room.name}, foto ${i + 1} de ${images.length}`}
+                        className={styles['main-img']}
+                        draggable={false}
+                        loading={i === 0 ? 'eager' : 'lazy'}
+                        onError={() => setImgError(e => ({ ...e, [i]: true }))}
+                      />
+                    ) : (
+                      <div className={styles['img-placeholder']}>🛏️</div>
+                    )}
+                  </div>
+                ))
               ) : (
                 <div className={styles['img-placeholder']}>🛏️</div>
               )}
+
+              {hasMultiple && (
+                <>
+                  <button
+                    type="button"
+                    className={[styles['carousel-btn'], styles['carousel-prev']].join(' ')}
+                    onClick={goPrev}
+                    aria-label="Foto anterior"
+                  >
+                    <IconChevronLeft size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    className={[styles['carousel-btn'], styles['carousel-next']].join(' ')}
+                    onClick={goNext}
+                    aria-label="Foto siguiente"
+                  >
+                    <IconChevronRight size={18} />
+                  </button>
+                  <span className={styles.counter} aria-live="polite">
+                    {active + 1} / {images.length}
+                  </span>
+                </>
+              )}
             </div>
-            {images.length > 1 && (
+            {hasMultiple && (
               <div className={styles.thumbs}>
                 {images.map((src, i) => (
                   <button
-                    key={src}
+                    key={`${src}-${i}`}
                     type="button"
                     className={[styles.thumb, i === active ? styles.active : ''].join(' ')}
                     onClick={() => setActive(i)}
@@ -124,6 +224,19 @@ export default function RoomDetailModal({ room, stay, availability, onClose, onA
             </ul>
           </div>
         </div>
+
+        <section className={styles['availability-section']} aria-labelledby={availabilityTitleId}>
+          <h3 id={availabilityTitleId} className={styles.label}>Disponibilidad</h3>
+          <AvailabilityCalendar
+            roomTypeId={room.id}
+            guests={stay?.guests ?? 1}
+            isPackage={isPackage}
+            packageNights={room.nights}
+            selectedCheckIn={stay?.checkIn ?? null}
+            selectedCheckOut={checkOut}
+            onSelectDates={onSelectDates}
+          />
+        </section>
 
         <div className={styles.summary}>
           {quote ? (
