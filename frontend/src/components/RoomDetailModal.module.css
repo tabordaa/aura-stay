@@ -4,7 +4,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 30, 18, 0.45);
+  background: rgba(var(--shade-rgb), 0.45);
   backdrop-filter: blur(3px);
   z-index: 300;
   display: flex;

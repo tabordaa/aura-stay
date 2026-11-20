@@ -239,8 +239,8 @@ export default function AdminDashboard() {
                         <div className={styles.client}>
                           <span className={styles['client-avatar']}>{initials(res.guest_display_name)}</span>
                           <div>
-                            <strong>{res.guest_display_name}</strong>
-                            <small className={styles.muted}>{res.guests} huésped{res.guests !== 1 ? 'es' : ''}</small>
+                            <strong className={styles.block}>{res.guest_display_name}</strong>
+                            <small className={[styles.muted, styles.block].join(' ')}>{res.guests} huésped{res.guests !== 1 ? 'es' : ''}</small>
                           </div>
                         </div>
                       </td>

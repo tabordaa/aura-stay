@@ -22,7 +22,7 @@
 .hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(10, 36, 20, 0.72) 0%, rgba(10, 36, 20, 0.84) 100%);
+  background: linear-gradient(180deg, rgba(var(--hero-rgb), 0.72) 0%, rgba(var(--hero-rgb), 0.84) 100%);
 }
 .hero-content {
   position: relative;
@@ -124,7 +124,7 @@
   transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
 }
 .cat-card:hover {
-  box-shadow: 0 6px 20px rgba(27, 94, 53, 0.1);
+  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.1);
   transform: translateY(-1px);
   border-color: var(--primary-mid);
 }
