@@ -46,6 +46,13 @@ export function formatShortDate(iso) {
     .replace(/[.,]/g, '');
 }
 
+// "vie 14" (día de la semana y número; para ejes compactos)
+export function formatWeekdayDay(iso) {
+  return parseISODate(iso)
+    .toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric' })
+    .replace(/[.,]/g, '');
+}
+
 // "octubre de 2026" a partir de un ISO con hora (created_at)
 export function formatMonthYear(iso) {
   return new Date(iso).toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
