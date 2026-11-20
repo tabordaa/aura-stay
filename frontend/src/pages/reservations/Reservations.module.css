@@ -72,6 +72,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   padding: 11px 22px;
   border-radius: var(--radius-xl);
   font-size: 0.9rem;
@@ -338,6 +339,7 @@
   display: flex;
   gap: 10px;
   justify-content: center;
+  flex-wrap: wrap;
   margin-top: 6px;
 }
 
@@ -484,4 +486,192 @@
 }
 @media (max-width: 420px) {
   .top-brand-name { display: none; }
+}
+
+/* Comprobante imprimible: oculto en pantalla, visible solo al imprimir / guardar como PDF */
+.receipt-header,
+.receipt-footer {
+  display: none;
+}
+
+@page {
+  margin: 16mm;
+}
+
+@media print {
+  :global(body) {
+    background: var(--card-bg);
+    color: var(--text-primary);
+  }
+
+  .page {
+    min-height: auto;
+    background: var(--card-bg);
+  }
+
+  .container {
+    max-width: 100%;
+    padding: 0;
+    gap: 14px;
+    animation: none;
+  }
+
+  /* Ocultar navegación, banner decorativo, línea de tiempo y controles interactivos */
+  .topbar,
+  .hero,
+  .timeline-panel,
+  .actions,
+  .hint,
+  .toast,
+  .overlay {
+    display: none;
+  }
+
+  /* Encabezado del comprobante */
+  .receipt-header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1.5px solid var(--border);
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .receipt-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .receipt-brand-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .receipt-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--primary);
+  }
+
+  .receipt-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .receipt-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    text-align: right;
+  }
+
+  .receipt-date {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+  }
+
+  /* Resaltado del código: forzar color de impresión solo aquí */
+  .receipt-code-box {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--primary-light);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .receipt-code-box small {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+  }
+
+  .receipt-code {
+    font-size: 1.85rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--primary);
+    line-height: 1.15;
+  }
+
+  /* Contenido principal limpio a una columna */
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    box-shadow: none;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .panel h3 {
+    color: var(--text-primary);
+    margin-bottom: 10px;
+  }
+
+  .item,
+  .row,
+  .detail,
+  .notice {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .item-emoji {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+  }
+
+  .detail-icon {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+  }
+
+  .row {
+    color: var(--text-primary);
+  }
+
+  .row-total {
+    border-top: 1px solid var(--border);
+  }
+
+  .notice {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+  }
+
+  /* Pie del comprobante */
+  .receipt-footer {
+    display: block;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    margin-top: 4px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    text-align: center;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }
