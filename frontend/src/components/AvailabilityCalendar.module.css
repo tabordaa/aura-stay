@@ -1,0 +1,310 @@
+/* Calendario mensual de disponibilidad dentro del modal de detalle */
+.calendar {
+  width: 100%;
+  max-width: 440px;
+  background: var(--card-bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.nav-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-xl);
+  background: var(--input-bg);
+  border: 1.5px solid var(--border);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+.nav-btn:hover:not(:disabled) {
+  background: var(--primary-light);
+  border-color: var(--primary-mid);
+  color: var(--primary);
+}
+.nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.nav-btn:focus-visible,
+.day:focus-visible,
+.retry-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.month-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.month {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.spinner {
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: var(--radius-xl);
+  animation: calSpin 0.7s linear infinite;
+}
+@keyframes calSpin {
+  to { transform: rotate(360deg); }
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  color: var(--error);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.retry-btn {
+  padding: 4px 10px;
+  border-radius: var(--radius-xl);
+  background: var(--card-bg);
+  border: 1px solid var(--error-border);
+  color: var(--error);
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background var(--transition);
+}
+.retry-btn:hover {
+  background: var(--primary-light);
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin-bottom: 6px;
+  text-align: center;
+}
+.weekdays span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  padding: 4px 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  row-gap: 4px;
+}
+
+.empty {
+  height: 38px;
+}
+
+.day {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  height: 38px;
+  border-radius: var(--radius-xl);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.84rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition), color var(--transition), box-shadow var(--transition);
+}
+.day:hover:not(:disabled) {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.day:disabled {
+  cursor: not-allowed;
+}
+
+.day-past {
+  color: var(--text-muted);
+  opacity: 0.48;
+}
+
+.day-unavailable {
+  background: var(--error-bg);
+  color: var(--error);
+  opacity: 0.78;
+  text-decoration: line-through;
+}
+
+/* Anillo discreto para identificar el día de hoy */
+.day-today {
+  box-shadow: inset 0 0 0 1.5px var(--primary);
+}
+
+/* Rango seleccionado con estética de píldora continua */
+.day-in-range {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: 0;
+}
+.day-in-range:nth-child(7n + 1) {
+  border-top-left-radius: var(--radius-xl);
+  border-bottom-left-radius: var(--radius-xl);
+}
+.day-in-range:nth-child(7n) {
+  border-top-right-radius: var(--radius-xl);
+  border-bottom-right-radius: var(--radius-xl);
+}
+
+.day-start,
+.day-end {
+  background: var(--primary);
+  color: var(--card-bg);
+  font-weight: 700;
+  opacity: 1;
+  text-decoration: none;
+}
+.day-start:hover:not(:disabled),
+.day-end:hover:not(:disabled) {
+  background: var(--primary-hover);
+  color: var(--card-bg);
+}
+.day-start.day-today,
+.day-end.day-today {
+  box-shadow: inset 0 0 0 2px var(--card-bg), 0 0 0 1.5px var(--primary);
+}
+
+.day-start.day-has-end {
+  border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+}
+.day-start.day-has-end:nth-child(7n) {
+  border-radius: var(--radius-xl);
+}
+.day-end {
+  border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
+}
+.day-end:nth-child(7n + 1) {
+  border-radius: var(--radius-xl);
+}
+
+/* Punto de advertencia cuando solo queda 1 unidad */
+.low-dot {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-xl);
+  background: var(--warning);
+}
+.day-start .low-dot,
+.day-end .low-dot {
+  background: var(--warning-bg);
+}
+
+.hint {
+  margin: 10px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.feedback {
+  margin: 10px 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--error);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-xl);
+  flex-shrink: 0;
+}
+.swatch-available {
+  background: var(--card-bg);
+  border: 1.5px solid var(--border);
+}
+.swatch-low {
+  background: var(--warning);
+}
+.swatch-unavailable {
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+  .nav-btn,
+  .day,
+  .retry-btn { transition: none; }
+}
+
+@media (max-width: 640px) {
+  .calendar {
+    max-width: none;
+    padding: 10px 8px;
+  }
+  .day,
+  .empty {
+    min-height: 38px;
+    height: 38px;
+  }
+  .day {
+    font-size: 0.82rem;
+  }
+}
