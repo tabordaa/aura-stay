@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { IconCheck } from '../../components/Icons';
 import StatusBadge from '../../components/StatusBadge';
 import AdminLayout from './AdminLayout';
+import OccupancyChart from './OccupancyChart';
 import RejectReservationModal from './RejectReservationModal';
 import ResetDemoModal from './ResetDemoModal';
 import { formatPrice, initials } from '../../utils/format';
@@ -29,6 +30,7 @@ const SUCCESS_TEXT = {
 export default function AdminDashboard() {
   const [reservations, setReservations] = useState([]);
   const [stats, setStats] = useState(null);
+  const [forecast, setForecast] = useState([]);
   const [loading, setLoading] = useState(true);
   const [online, setOnline] = useState(true);
   const [tab, setTab] = useState('pendiente');
@@ -41,12 +43,17 @@ export default function AdminDashboard() {
   const [resetBusy, setResetBusy] = useState(false);
   const [resetError, setResetError] = useState('');
 
-  // Recarga KPIs y tabla juntos; los setState ocurren al llegar la respuesta
+  // Recarga KPIs, ocupación y tabla juntos; los setState ocurren al llegar la respuesta
   // Devuelve true/false; con `silent` no muestra toast (lo decide quien llama)
-  const load = useCallback((silent = false) => Promise.all([adminService.stats(), adminService.listReservations()])
-    .then(([summary, list]) => {
+  const load = useCallback((silent = false) => Promise.all([
+    adminService.stats(),
+    adminService.listReservations(),
+    adminService.occupancyForecast(),
+  ])
+    .then(([summary, list, nextForecast]) => {
       setStats(summary);
       setReservations(list);
+      setForecast(nextForecast);
       setOnline(true);
       return true;
     })
@@ -181,6 +188,8 @@ export default function AdminDashboard() {
               : <span className={styles.chip}>Todo al día</span>}
           </div>
         </section>
+
+        <OccupancyChart data={forecast} loading={loading} error={!online && forecast.length === 0} />
 
         <section className={styles.panel}>
           <div className={styles.tabs} role="tablist" aria-label="Estados de reserva">

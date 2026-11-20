@@ -1026,3 +1026,334 @@ form.confirm { flex-wrap: wrap; }
     transform: none;
   }
 }
+
+/* Ocupación próximos 14 días */
+@keyframes occBarGrow {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+
+@keyframes occFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.occ-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-bottom: 24px;
+}
+
+.occ-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.occ-avg {
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.occ-avg strong {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.occ-state {
+  text-align: center;
+  padding: 36px 14px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.occ-figure {
+  transition: opacity var(--transition);
+}
+
+.occ-loading {
+  opacity: 0.55;
+}
+
+.occ-chart {
+  --occ-plot-h: 168px;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 8px;
+  padding-top: 16px;
+}
+
+.occ-yaxis {
+  position: relative;
+  height: var(--occ-plot-h);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  user-select: none;
+}
+
+.occ-yaxis span {
+  position: absolute;
+  right: 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.occ-ytick-100 { top: 0; transform: translateY(-50%); }
+.occ-ytick-50  { top: 50%; transform: translateY(-50%); }
+.occ-ytick-0   { bottom: 0; transform: translateY(50%); }
+
+.occ-plot-wrap {
+  position: relative;
+  min-width: 0;
+}
+
+.occ-plot {
+  position: relative;
+}
+
+/* Líneas guía horizontales en 100, 50 y 0 % */
+.occ-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--occ-plot-h);
+  pointer-events: none;
+}
+
+.occ-grid span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--border);
+}
+
+.occ-grid-100 { top: 0; }
+.occ-grid-50  { top: 50%; }
+.occ-grid-0   { bottom: 0; }
+
+.occ-bars {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(var(--occ-cols, 14), minmax(0, 1fr));
+  gap: 6px;
+}
+
+/* Botón que ocupa toda la columna para dar un área de impacto amplia aunque la barra sea baja */
+.occ-col {
+  min-width: 0;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition);
+}
+
+.occ-col:hover,
+.occ-col-active {
+  background: rgba(var(--primary-rgb), 0.05);
+}
+
+.occ-col:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.occ-bar-area {
+  position: relative;
+  width: 100%;
+  height: var(--occ-plot-h);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.occ-bar {
+  width: 100%;
+  max-width: 28px;
+  border-radius: 4px 4px 0 0;
+  background: rgba(var(--primary-rgb), 0.55);
+  transform-origin: bottom center;
+  animation: occBarGrow 0.36s ease both;
+  animation-delay: calc(var(--occ-i, 0) * 24ms);
+  transition: height var(--transition), background var(--transition);
+}
+
+.occ-bar-nonzero {
+  min-height: 2px;
+}
+
+.occ-bar-today {
+  background: var(--primary);
+}
+
+.occ-col:hover .occ-bar,
+.occ-col-active .occ-bar {
+  background: var(--primary);
+}
+
+.occ-col:hover .occ-bar-today,
+.occ-col-active .occ-bar-today {
+  background: var(--primary-hover);
+}
+
+.occ-val {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: occFadeIn 0.25s ease both;
+  animation-delay: calc(var(--occ-i, 0) * 24ms + 180ms);
+}
+
+.occ-xlabel {
+  margin-top: 8px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--text-muted);
+  white-space: nowrap;
+  text-align: center;
+  transition: color var(--transition);
+}
+
+.occ-col-today .occ-xlabel {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.occ-col:hover .occ-xlabel,
+.occ-col-active .occ-xlabel {
+  color: var(--text-primary);
+}
+
+.occ-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  z-index: 10;
+  max-width: 100%;
+  padding: 6px 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--card-shadow);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: occFadeIn 0.14s ease both;
+}
+
+.occ-tooltip-left {
+  left: 0;
+}
+
+.occ-tooltip-right {
+  right: 0;
+}
+
+.occ-tooltip-center {
+  left: var(--occ-tip-x, 50%);
+  transform: translateX(-50%);
+}
+
+@media (max-width: 860px) {
+  .occ-bars {
+    gap: 4px;
+  }
+  .occ-xlabel {
+    font-size: 0.66rem;
+  }
+  .occ-tooltip,
+  .occ-tooltip-left,
+  .occ-tooltip-right,
+  .occ-tooltip-center {
+    left: 0;
+    right: 0;
+    transform: none;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;
+    white-space: normal;
+    text-align: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .occ-head {
+    margin-bottom: 20px;
+  }
+  .occ-chart {
+    --occ-plot-h: 144px;
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 6px;
+    padding-top: 14px;
+  }
+  .occ-yaxis {
+    font-size: 0.64rem;
+  }
+  .occ-bars {
+    gap: 3px;
+  }
+  .occ-val {
+    font-size: 0.64rem;
+  }
+  .occ-val-lifted {
+    margin-bottom: 14px;
+  }
+  .occ-xlabel {
+    font-size: 0.62rem;
+    line-height: 1.15;
+    white-space: normal;
+  }
+  .occ-xlabel-alt {
+    visibility: hidden;
+  }
+  .occ-tooltip {
+    font-size: 0.74rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .occ-bar,
+  .occ-val,
+  .occ-tooltip,
+  .occ-figure,
+  .occ-col,
+  .occ-xlabel {
+    animation: none;
+    transition: none;
+  }
+}

@@ -1,11 +1,21 @@
 import { delay, loadDb, newId, resetDemoData, saveDb } from './mockApi';
 import { getSessionUserId } from './auth.service';
-import { todayISO } from '../utils/dates';
+import { addDays, todayISO } from '../utils/dates';
 import { validateRoomType } from '../utils/validation';
 import { ADMIN_TRANSITIONS, REASON_MAX, REASON_MIN, transitionError } from '../utils/reservations';
 
 const NO_PERMISSION = 'No tienes permisos para esta acción';
 const OCCUPYING = ['confirmada', 'en_curso'];
+const ACTIVE_RESERVATIONS = ['pendiente', 'confirmada', 'en_curso'];
+
+// Inventario activo compartido entre stats() y occupancyForecast()
+function activeInventory(db) {
+  const activeTypes = db.roomTypes.filter((r) => r.is_active !== false);
+  return {
+    activeIds: new Set(activeTypes.map((r) => r.id)),
+    totalUnits: activeTypes.reduce((n, r) => n + (r.units || 0), 0),
+  };
+}
 
 // La autorización real vivirá en el backend; aquí se valida sesión y rol contra la BD
 function requireAdmin(db) {
@@ -145,9 +155,7 @@ export const adminService = {
     requireAdmin(db);
     const today = todayISO();
     const month = today.slice(0, 7);
-    const activeTypes = db.roomTypes.filter((r) => r.is_active !== false);
-    const activeIds = new Set(activeTypes.map((r) => r.id));
-    const totalUnits = activeTypes.reduce((n, r) => n + (r.units || 0), 0);
+    const { activeIds, totalUnits } = activeInventory(db);
     // Solo room types activos, para que el porcentaje no pase de 100 %
     const occupied = db.reservations.filter((r) => activeIds.has(r.room_type_id)
       && OCCUPYING.includes(r.status) && r.check_in <= today && today < r.check_out).length;
@@ -164,6 +172,38 @@ export const adminService = {
       arrivals_today: db.reservations.filter((r) => ['pendiente', 'confirmada'].includes(r.status) && r.check_in === today).length,
       departures_today: db.reservations.filter((r) => r.status === 'en_curso' && r.check_out === today).length,
     };
+  },
+
+  // Pronóstico diario desde hoy: ocupación con reservas confirmadas o en curso; llegadas y salidas con todas las activas
+  async occupancyForecast(days = 14) {
+    await delay();
+    const db = loadDb();
+    requireAdmin(db);
+    const today = todayISO();
+    const { activeIds, totalUnits } = activeInventory(db);
+    const active = db.reservations.filter((r) => ACTIVE_RESERVATIONS.includes(r.status));
+    const result = [];
+    for (let i = 0; i < days; i += 1) {
+      const date = addDays(today, i);
+      let occupied = 0;
+      let arrivals = 0;
+      let departures = 0;
+      for (const r of active) {
+        // Ocupa solo lo confirmado o en curso (mismo criterio que el KPI de hoy); las pendientes cuentan como llegadas
+        if (OCCUPYING.includes(r.status) && activeIds.has(r.room_type_id) && r.check_in <= date && date < r.check_out) occupied += 1;
+        if (r.check_in === date) arrivals += 1;
+        if (r.check_out === date) departures += 1;
+      }
+      result.push({
+        date,
+        occupied,
+        total: totalUnits,
+        pct: totalUnits ? Math.round((occupied / totalUnits) * 100) : 0,
+        arrivals,
+        departures,
+      });
+    }
+    return result;
   },
 
   // Sin `status` devuelve todas; más recientes primero
